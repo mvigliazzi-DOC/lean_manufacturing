@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mestres da Qualidade: O Desafio Total</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --p1-color: #3b82f6;
+            --p2-color: #10b981;
+            --p3-color: #f59e0b;
+            --p4-color: #ef4444;
+            --card-purple: #a855f7;
+            --accent-cyan: #06b6d4;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        /* Animações e Estilos de Casas do Tabuleiro */
+        .tile-card {
+            background-color: #0f172a;
+            border: 2px solid #334155;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .tile-card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+        }
+
+        .tile-panic {
+            border-color: #ef4444 !important;
+            background-color: #450a0a !important;
+        }
+
+        .tile-event {
+            border-color: var(--card-purple) !important;
+            background-color: #3b0764 !important;
+        }
+
+        .tile-finish {
+            border-color: #f59e0b !important;
+            background: linear-gradient(135deg, #451a03, #78350f) !important;
+        }
+
+        .pawn-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-opt {
+            background-color: #1e293b;
+            border: 1.5px solid #334155;
+            transition: all 0.2s ease;
+        }
+
+        .btn-opt:hover {
+            background-color: #334155;
+            border-color: var(--accent-cyan);
+            transform: translateX(4px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06b6d4;
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 flex flex-col items-center justify-between min-h-screen">
+
+    <header class="text-center mb-6 w-full max-w-6xl">
+        <h1 class="text-2xl md:text-4xl font-extrabold text-cyan-400 tracking-tight uppercase flex items-center justify-center gap-2">
+            <span>🏆</span> Mestres da Qualidade: O Desafio Total
+        </h1>
+        <p class="text-slate-400 text-xs md:text-base mt-1">
+            52 Casas • Dificuldade Progressiva (Casa 8+) • 4 Alternativas por Pergunta
+        </p>
+    </header>
+
+    <div id="setup-screen" class="w-full max-w-md bg-slate-800 border-2 border-cyan-500 rounded-2xl p-6 md:p-8 text-center shadow-2xl my-auto">
+        <div class="text-4xl mb-3">📋</div>
+        <h2 class="text-xl md:text-2xl font-bold text-cyan-400 mb-2">Auditoria de Processos</h2>
+        <p class="text-slate-300 text-sm mb-4">
+            A complexidade técnica das perguntas aumentará gradativamente a partir da <strong>Casa #8</strong>!
+        </p>
+        <p class="text-xs text-slate-400 mb-6">Selecione o número de auditores/especialistas:</p>
+        <div class="grid grid-cols-3 gap-3">
+            <button onclick="setupGame(2)" class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-3 px-2 rounded-xl text-sm md:text-base transition-all hover:scale-105 shadow-lg">2 Jogadores</button>
+            <button onclick="setupGame(3)" class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-3 px-2 rounded-xl text-sm md:text-base transition-all hover:scale-105 shadow-lg">3 Jogadores</button>
+            <button onclick="setupGame(4)" class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-3 px-2 rounded-xl text-sm md:text-base transition-all hover:scale-105 shadow-lg">4 Jogadores</button>
+        </div>
+    </div>
+
+    <div id="game-container" class="hidden w-full max-w-7xl flex flex-col gap-4">
+        
+        <!-- Scoreboard -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full" id="scoreboard">
+            <div id="p1-card" class="bg-slate-800 border-2 border-blue-500 rounded-xl p-3 text-center transition-all opacity-50">
+                <div class="font-bold text-blue-400 text-xs md:text-sm">Especialista 1 (Azul)</div>
+                <div id="p1-pos" class="text-xs text-slate-300 mt-1">Casa: 0</div>
+            </div>
+            <div id="p2-card" class="bg-slate-800 border-2 border-emerald-500 rounded-xl p-3 text-center transition-all opacity-50">
+                <div class="font-bold text-emerald-400 text-xs md:text-sm">Especialista 2 (Verde)</div>
+                <div id="p2-pos" class="text-xs text-slate-300 mt-1">Casa: 0</div>
+            </div>
+            <div id="p3-card" class="bg-slate-800 border-2 border-amber-500 rounded-xl p-3 text-center transition-all opacity-50">
+                <div class="font-bold text-amber-400 text-xs md:text-sm">Especialista 3 (Amarelo)</div>
+                <div id="p3-pos" class="text-xs text-slate-300 mt-1">Casa: 0</div>
+            </div>
+            <div id="p4-card" class="bg-slate-800 border-2 border-red-500 rounded-xl p-3 text-center transition-all opacity-50">
+                <div class="font-bold text-red-400 text-xs md:text-sm">Especialista 4 (Vermelho)</div>
+                <div id="p4-pos" class="text-xs text-slate-300 mt-1">Casa: 0</div>
+            </div>
+        </div>
+
+        <!-- Panel Controls -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-3 md:p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+            <div class="flex items-center gap-2 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-xs md:text-sm">
+                <label for="question-time-limit" class="text-slate-300">⏱️ Tempo/Pergunta (s):</label>
+                <input type="number" id="question-time-limit" value="35" min="10" max="180" class="w-14 bg-slate-800 border border-cyan-500 text-white text-center font-bold rounded py-0.5">
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button id="btn-roll" onclick="rollDice()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black px-5 py-2 rounded-lg text-sm md:text-base transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Rolar Dado 🎲
+                </button>
+                <div id="dice-result" class="text-2xl font-black text-amber-400 min-w-[50px] text-center">
+                    -
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="openModal('rules-modal')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-2 rounded-lg text-xs md:text-sm transition-all">
+                    📜 Regras
+                </button>
+                <button onclick="location.reload()" class="bg-red-500 hover:bg-red-400 text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm transition-all">
+                    🔄 Reiniciar
+                </button>
+            </div>
+        </div>
+
+        <!-- Board Grid -->
+        <div id="board" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-2 bg-slate-800 border-2 border-slate-700 p-3 rounded-2xl">
+            <!-- Dynamically Generated Tiles -->
+        </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rules-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border-2 border-cyan-500 rounded-2xl p-6 max-w-2xl w-full text-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h2 class="text-xl font-bold text-cyan-400 mb-4 text-center">📜 Manual da Qualidade & Dificuldade Progressiva</h2>
+            <ul class="space-y-3 text-xs md:text-sm text-slate-300">
+                <li class="bg-slate-900 p-3 rounded-lg border-l-4 border-cyan-500">
+                    <strong>4 Alternativas (A, B, C, D):</strong> Todas as perguntas possuem 1 opção correta e 3 alternativas plausíveis.
+                </li>
+                <li class="bg-slate-900 p-3 rounded-lg border-l-4 border-emerald-500">
+                    <strong>Nível 1 (Casas 1 a 7):</strong> Conceitos fundamentais (Ishikawa 6M, 5W2H, PDCA, Pareto 80/20).
+                </li>
+                <li class="bg-slate-900 p-3 rounded-lg border-l-4 border-amber-500">
+                    <strong>Nível 2 (Casas 8 a 20):</strong> Nível Intermediário - Cálculos de RPN em FMEA, Diagramas de Dispersão, Histograma Bimodal, Poka-Yoke.
+                </li>
+                <li class="bg-slate-900 p-3 rounded-lg border-l-4 border-orange-500">
+                    <strong>Nível 3 (Casas 21 a 35):</strong> Nível Avançado - CEP Western Electric, Seis Sigma (3,4 DPMO), DMAIC, MASP, ANOVA e DOE.
+                </li>
+                <li class="bg-slate-900 p-3 rounded-lg border-l-4 border-purple-500">
+                    <strong>Nível 4 (Casas 36 a 51):</strong> Desafio Aleatório - Sorteio totalmente randômico cobrindo o acervo completo de perguntas dos Níveis 1, 2 e 3.
+                </li>
+                <li class="bg-slate-900 p-3 rounded-lg border-l-4 border-blue-500">
+                    <strong>Bônus de Acerto:</strong> Avança +2 casas adicionais ao acertar a pergunta técnica!
+                </li>
+                <li class="bg-slate-900 p-3 rounded-lg border-l-4 border-red-500">
+                    <strong>Penalidade de Erro / Tempo:</strong> Retorna para a casa onde estava no início da jogada.
+                </li>
+            </ul>
+            <button onclick="closeModal('rules-modal')" class="w-full mt-5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl transition-all">
+                Entendido e Jogar!
+            </button>
+        </div>
+    </div>
+
+    <!-- Question Modal -->
+    <div id="question-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border-2 border-cyan-500 rounded-2xl p-5 md:p-8 max-w-3xl w-full text-slate-200 shadow-2xl">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <span id="q-process" class="bg-cyan-500 text-slate-950 text-xs font-black px-3 py-1 rounded-md uppercase">PROCESSO</span>
+                <span id="q-diff-badge" class="bg-emerald-500 text-slate-950 text-xs font-bold px-3 py-1 rounded-md">🟢 NÍVEL 1</span>
+                <span id="q-timer" class="bg-slate-900 text-amber-400 border border-amber-400 text-xs font-bold px-3 py-1 rounded-md">⏱️ 35s</span>
+            </div>
+            <div id="q-text" class="text-base md:text-xl font-bold mb-6 text-slate-100 leading-snug">
+                Texto da Pergunta...
+            </div>
+            <div id="q-options" class="flex flex-col gap-3">
+                <!-- Dynamic Options Buttons -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Modal -->
+    <div id="card-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border-2 border-purple-500 rounded-2xl p-6 max-w-md w-full text-center shadow-2xl">
+            <div class="text-4xl mb-2">🎴</div>
+            <h2 class="text-xl font-extrabold text-purple-400 mb-3 uppercase tracking-wider">Relatório de Auditoria Interna</h2>
+            <p id="card-text" class="text-sm md:text-base text-slate-200 mb-6 leading-relaxed bg-slate-900 p-4 rounded-xl border border-slate-700">
+                Texto da carta de evento...
+            </p>
+            <button onclick="applyCardEffect()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg">
+                Executar Ação
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* Web Audio API Sound Synthesizer (Zero External Dependencies) */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playBeep(freq = 440, type = 'sine', duration = 0.15) {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) { console.log(e); }
+        }
+
+        function playSuccessSound() {
+            playBeep(523.25, 'triangle', 0.1);
+            setTimeout(() => playBeep(659.25, 'triangle', 0.1), 100);
+            setTimeout(() => playBeep(783.99, 'triangle', 0.25), 200);
+        }
+
+        function playErrorSound() {
+            playBeep(220, 'sawtooth', 0.15);
+            setTimeout(() => playBeep(180, 'sawtooth', 0.3), 150);
+        }
+
+        function playCardSound() {
+            playBeep(350, 'sine', 0.08);
+            setTimeout(() => playBeep(500, 'sine', 0.15), 90);
+        }
+
+        /* Database of Tiles */
+        const tileProcesses = [
+            "Início", "Ishikawa (6M)", "5W2H", "PDCA - Plan", "Pareto", "Folha de Verificação", 
+            "Escolha uma Carta 🎴", 
+            "Histograma", "Diagrama de Dispersão", "Carta de Controle", "PDCA - Do", "🔥 ALERTA DE REFUGO!", "Kaizen", 
+            "Escolha uma Carta 🎴", 
+            "FMEA", "Poka-Yoke", "5S - Seiri", "5S - Seiton", "Kanban", "PDCA - Check", 
+            "Escolha uma Carta 🎴", 
+            "MASP", "Brainstorming", "🔥 PARADA DE LINHA!", "Six Sigma", "DMAIC", "Matriz GUT", 
+            "Escolha uma Carta 🎴", 
+            "CEP (Controle Estatístico)", "Gráfico de Radar", "Standard Work", "Andon", "Gemba Walk", "PDCA - Act", 
+            "Escolha uma Carta 🎴", 
+            "🔥 PANICO DE AUDITORIA!", "Benchmarking", "Hoshin Kanri", "TQM", "QFD (Casa da Qualidade)", "SIPOC", 
+            "Escolha uma Carta 🎴", 
+            "Seis Sigma (DPMO)", "Just-in-Time", "Heijunka", "Jidoka", "🔥 RECALL CRÍTICO!", "Análise de Variância (ANOVA)", 
+            "Escolha uma Carta 🎴", 
+            "DOE (Design de Experimentos)", "Gage R&R", "TOTAL QUALITY MASTER 🏆"
+        ];
+
+        /* Database of Audit Cards */
+        const cardsDatabase = [
+            { text: "Aprovação em auditoria ISO 9001 sem nenhuma Não Conformidade! Avance 3 casas.", steps: 3 },
+            { text: "Excelente projeto Kaizen aprovado no Gemba Walk. Avance 2 casas.", steps: 2 },
+            { text: "Dispositivo Poka-Yoke falhou devido à sujeira no sensor. Recue 2 casas.", steps: -2 },
+            { text: "Falta de calibração em instrumento de medição crítico. Recue 2 casas.", steps: -2 },
+            { text: "Equipe de CCQ resolveu causa raiz com Diagrama de Pareto. Avance 2 casas.", steps: 2 },
+            { text: "Lote rejeitado por desvio dimensional acima do limite superior. Recue 3 casas.", steps: -3 }
+        ];
+
+        /* Question Database by Progressive Level (Each item has 1 correct & 3 wrongs = 4 choices) */
+        const questionsDatabase = {
+            // Level 1: Casas 1 a 7 (Básico)
+            level1: [
+                {
+                    proc: "Ishikawa (6M)",
+                    q: "Quais são os 6 fatores clássicos (6M) analisados no Diagrama de Causa e Efeito de Ishikawa?",
+                    correct: "Método, Máquina, Medida, Meio Ambiente, Mão de Obra, Material.",
+                    wrongs: [
+                        "Meta, Marketing, Métrica, Meio, Mão de Obra, Matriz.",
+                        "Manutenção, Máquina, Medição, Motivação, Mapeamento, Método.",
+                        "Melhoria, Matéria-prima, Mão de Obra, Monitoramento, Matriz, Medida."
+                    ]
+                },
+                {
+                    proc: "5W2H",
+                    q: "Na ferramenta de plano de ação 5W2H, o que representam, respectivamente, o 'Why' e o 'How'?",
+                    correct: "A justificativa/porquê da ação e a forma de execução do procedimento.",
+                    wrongs: [
+                        "O responsável pela tarefa e o prazo final de entrega.",
+                        "O custo total previsto e o local físico de realização.",
+                        "A medição do indicador e o método de calibração envolvido."
+                    ]
+                },
+                {
+                    proc: "PDCA - Plan",
+                    q: "Qual o objetivo central da fase de Planejamento (PLAN) no ciclo PDCA?",
+                    correct: "Identificar o problema, analisar as causas raiz e estabelecer plano de ação com metas claras.",
+                    wrongs: [
+                        "Executar imediatamente as modificações no chão de fábrica.",
+                        "Coletar dados finais para auditar o projeto de melhoria.",
+                        "Padronizar o trabalho e treinar todos os operadores do turno."
+                    ]
+                },
+                {
+                    proc: "Pareto",
+                    q: "O Princípio de Pareto aplicado à Qualidade estabelece formalmente que:",
+                    correct: "80% dos problemas ou perdas decorrem de apenas 20% das causas vitais.",
+                    wrongs: [
+                        "80% dos funcionários são responsáveis por 20% da produção total.",
+                        "20% dos custos da empresa devem ser reduzidos obrigatoriamente a cada ano.",
+                        "80% do tempo gasto em reuniões gera apenas 20% de ações concluídas."
+                    ]
+                },
+                {
+                    proc: "Folha de Verificação",
+                    q: "A Folha de Verificação (Check Sheet) é utilizada primariamente para:",
+                    correct: "Facilitar a coleta estruturada e padronizada de dados no local de ocorrência.",
+                    wrongs: [
+                        "Calcular a variância estatística de um lote de peças usinadas.",
+                        "Projetar experimentos fatoriais complexos para otimização de parâmetros.",
+                        "Mapear os fluxos financeiros de uma cadeia de suprimentos."
+                    ]
+                }
+            ],
+
+            // Level 2: Casas 8 a 20 (Intermediário - A partir da casa 8)
+            level2: [
+                {
+                    proc: "Histograma",
+                    q: "Em uma análise de Histograma, uma distribuição bimodal geralmente indica que:",
+                    correct: "Os dados foram coletados misturando duas fontes ou condições distintas de processo (ex: 2 máquinas ou 2 turnos).",
+                    wrongs: [
+                        "O processo está perfeitamente centrado no valor nominal da especificação.",
+                        "A amostra apresenta uma variabilidade aleatória e puramente Gaussiana.",
+                        "Os instrumentos de medição perderam a calibração durante a leitura."
+                    ]
+                },
+                {
+                    proc: "Diagrama de Dispersão",
+                    q: "Ao construir um Diagrama de Dispersão entre 'Temperatura de Forno' e 'Dureza da Peça', obtém-se um coeficiente de correlação r = -0,92. Isso significa que:",
+                    correct: "Existe uma forte correlação negativa: conforme a temperatura aumenta, a dureza tende a diminuir substancialmente.",
+                    wrongs: [
+                        "Não existe nenhuma relação causal ou estatística entre a temperatura e a dureza.",
+                        "Existe uma correlação positiva fraca, demonstrando estabilidade no processo.",
+                        "A temperatura do forno explica apenas 8% da variação encontrada na dureza."
+                    ]
+                },
+                {
+                    proc: "FMEA",
+                    q: "No FMEA de Processo, como é calculado o Número de Prioridade de Risco (RPN / NPR)?",
+                    correct: "Multiplicando Severidade (S) x Ocorrência (O) x Detecção (D).",
+                    wrongs: [
+                        "Somando Severidade (S) + Ocorrência (O) + Detecção (D).",
+                        "Subtraindo a Detecção (D) da média entre Severidade (S) e Ocorrência (O).",
+                        "Dividindo o custo da falha pela probabilidade de ocorrência no turno."
+                    ]
+                },
+                {
+                    proc: "Poka-Yoke",
+                    q: "Qual é a classificação correta de um dispositivo Poka-Yoke do tipo 'Prevenção por Paralisação' (Shutdown)?",
+                    correct: "Dispositivo que detecta o erro antes que ele ocorra e interrompe a máquina automaticamente.",
+                    wrongs: [
+                        "Dispositivo que apenas emite um sinal sonoro enquanto a peça defeituosa é produzida.",
+                        "Uma lista em papel colada na máquina alertando o operador para prestar atenção.",
+                        "Um inspetor de qualidade dedicado que checa 100% das peças ao final da linha."
+                    ]
+                },
+                {
+                    proc: "Kanban",
+                    q: "Dentro da filosofia Lean/Just-in-Time, qual o papel fundamental do cartão Kanban?",
+                    correct: "Autorizar a produção ou a movimentação de itens com base no consumo real do processo posterior (sistema puxado).",
+                    wrongs: [
+                        "Registrar as advertências disciplinares dos operadores por falta de qualidade.",
+                        "Empurrar a maior quantidade possível de estoque intermediário para o depósito.",
+                        "Calcular a depreciação contábil do maquinário de usinagem."
+                    ]
+                }
+            ],
+
+            // Level 3: Casas 21 a 35 (Avançado)
+            level3: [
+                {
+                    proc: "CEP (Controle Estatístico)",
+                    q: "Uma carta de controle X-Barra exibe 8 pontos consecutivos de um mesmo lado da linha média (média central). Segundo as regras de Western Electric, isto indica:",
+                    correct: "Um sinal de causa especial de variação (deslocamento da média do processo).",
+                    wrongs: [
+                        "Que o processo está estatisticamente sob controle e altamente estável.",
+                        "Que o instrumento de medição deve ser descartado imediatamente.",
+                        "Uma variabilidade aleatória comum totalmente aceitável pela norma ISO."
+                    ]
+                },
+                {
+                    proc: "Six Sigma",
+                    q: "Um processo que opera com nível de qualidade 6 Sigma dentro de uma distribuição normal com desvio de média de 1,5 Sigma produz estatisticamente:",
+                    correct: "No máximo 3,4 Defeitos Por Milhão de Oportunidades (DPMO).",
+                    wrongs: [
+                        "Exatamente 66.807 defeitos por milhão de oportunidades (DPMO).",
+                        "Zero defeitos absolutos sob qualquer condição operacional.",
+                        "340 defeitos a cada mil peças fabricadas no lote."
+                    ]
+                },
+                {
+                    proc: "DMAIC",
+                    q: "Na metodologia DMAIC, qual a diferença essencial entre a fase 'Analyze' (Analisar) e a fase 'Improve' (Melhorar)?",
+                    correct: "Analyze valida e comprova estatisticamente as causas raiz; Improve desenvolve e testa as soluções para eliminá-las.",
+                    wrongs: [
+                        "Analyze calcula o custo do projeto; Improve demite os responsáveis pelo erro.",
+                        "Analyze implementa as alterações físicas; Improve mede a satisfação do cliente.",
+                        "Analyze treina a equipe; Improve elabora os gráficos de Pareto iniciais."
+                    ]
+                },
+                {
+                    proc: "MASP",
+                    q: "Na fase de 'Análise do Problema' do MASP (Metodologia de Análise e Solução de Problemas), qual ferramenta é fundamental para aprofundar as causas raiz?",
+                    correct: "Técnica dos 5 Porquês integrada ao Diagrama de Causa e Efeito.",
+                    wrongs: [
+                        "Matriz de Análise SWOT da concorrência comercial.",
+                        "Gráfico de Gantt do cronograma executivo da diretoria.",
+                        "Simulação estocástica de Monte Carlo para fluxo financeiro."
+                    ]
+                },
+                {
+                    proc: "Gemba Walk",
+                    q: "Qual o verdadeiro propósito de um 'Gemba Walk' executado pelos líderes de qualidade?",
+                    correct: "Ir ao local real onde o valor é criado para observar o processo direto, escutar operadores e identificar desperdícios.",
+                    wrongs: [
+                        "Realizar auditorias surpresa para aplicar punições administrativas aos trabalhadores.",
+                        "Analisar planilhas de desempenho no escritório sem contato com o chão de fábrica.",
+                        "Apresentar resultados financeiros anuais para investidores externos."
+                    ]
+                }
+            ],
+
+            // Level 4: Casas 36 a 51 (Especialista Master)
+            level4: [
+                {
+                    proc: "Análise de Variância (ANOVA)",
+                    q: "Em um experimento com 3 fornecedores de matéria-prima, o teste ANOVA apresentou p-valor = 0,012 (adotando nível de significância alpha = 0,05). A conclusão correta é:",
+                    correct: "Rejeita-se a hipótese nula (H0): Pelo menos um dos fornecedores apresenta média significativamente diferente dos demais.",
+                    wrongs: [
+                        "Aceita-se a hipótese nula (H0): Todos os 3 fornecedores entregam matérias-primas rigorosamente idênticas.",
+                        "O experimento é estatisticamente inválido e precisa ter seu tamanho amostral duplicado.",
+                        "O p-valor confirma que 98,8% dos lotes produzidos serão defeituosos."
+                    ]
+                },
+                {
+                    proc: "Gage R&R",
+                    q: "Um estudo estatístico de Sistema de Medição (Gage R&R) resultou em %R&R = 28% da variação total. Segundo as diretrizes do AIAG, este sistema é considerado:",
+                    correct: "Aceitável dependendo da aplicação, custos e criticidade da característica (zona marginal entre 10% e 30%).",
+                    wrongs: [
+                        "Completamente inaceitável e deve ser descartado imediatamente por exceder 5%.",
+                        "Excelente e ideal, dispensando qualquer calibração pelos próximos 5 anos.",
+                        "Inválido, pois o valor de R&R deveria ser obrigatoriamente superior a 100%."
+                    ]
+                },
+                {
+                    proc: "DOE (Design de Experimentos)",
+                    q: "Qual a vantagem de um Planejamento Fatorial Completo (Full Factorial DOE) em comparação a testar 'Um Fator por Vez' (OFAT)?",
+                    correct: "Permite avaliar os efeitos de interação entre múltiplos fatores com menor número de corridas e maior precisão estatística.",
+                    wrongs: [
+                        "Elimina completamente a necessidade de medições réplicas durante os ensaios.",
+                        "Garante que todas as variáveis resposta sigam distribuição uniforme descontínua.",
+                        "Reduz o custo financeiro ignorando a variabilidade intrínseca do processo."
+                    ]
+                },
+                {
+                    proc: "Hoshin Kanri",
+                    q: "O Hoshin Kanri (Desdobramento da Estratégia) utiliza o conceito de 'Catchball' que consiste em:",
+                    correct: "Processo de negociação bidirecional contínua de metas e meios entre os níveis hierárquicos da organização.",
+                    wrongs: [
+                        "Um jogo corporativo de integração utilizado em dinâmicas de treinamento motivacional.",
+                        "O envio unilateral de ordens da diretoria executiva diretamente para os operadores do chão de fábrica.",
+                        "A rotação aleatória de cargos entre gerentes de áreas operacionais distintas."
+                    ]
+                },
+                {
+                    proc: "QFD (Casa da Qualidade)",
+                    q: "Na matriz principal do QFD (Quality Function Deployment), o 'Telhado' (roof) da Casa da Qualidade é utilizado para mapear:",
+                    correct: "As inter-relações e conflitos técnicos entre os requisitos de engenharia (O COMO).",
+                    wrongs: [
+                        "A comparação direta entre os preços dos produtos concorrentes no mercado.",
+                        "A lista de prioridades de treinamento do setor de Recursos Humanos.",
+                        "A taxa de depreciação anual dos equipamentos produtivos."
+                    ]
+                },
+                {
+                    proc: "Seis Sigma (DPMO)",
+                    q: "Se um processo produz 50 defeitos em 500 produtos analisados, onde cada produto possui 4 oportunidades independentes de defeito, o DPMO é igual a:",
+                    correct: "25.000 DPMO.",
+                    wrongs: [
+                        "100.000 DPMO.",
+                        "10.000 DPMO.",
+                        "2.500 DPMO."
+                    ]
+                }
+            ]
+        };
+
+        /* Game State */
+        let players = [];
+        let currentPlayerIndex = 0;
+        let timer = null;
+        let activeCardEffect = null;
+
+        function setupGame(num) {
+            initAudio();
+            players = [];
+            for (let i = 0; i < num; i++) {
+                players.push({ id: i + 1, pos: 0, prev: 0, color: `p${i + 1}` });
+            }
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'flex';
+            createBoard();
+            updateScoreboard();
+        }
+
+        function createBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            tileProcesses.forEach((name, i) => {
+                const tile = document.createElement('div');
+                let extraClasses = 'tile-card';
+                if (name.includes('Carta')) extraClasses += ' tile-event';
+                if (name.includes('!')) extraClasses += ' tile-panic';
+                if (i === tileProcesses.length - 1) extraClasses += ' tile-finish';
+
+                tile.className = `${extraClasses} rounded-xl min-h-[95px] p-2 flex flex-col justify-between items-center text-center shadow-md relative`;
+                tile.id = `tile-${i}`;
+                tile.innerHTML = `
+                    <span class="text-[10px] text-slate-500 font-extrabold self-start">#${i}</span>
+                    <div class="text-[11px] md:text-xs font-bold leading-tight my-1 text-cyan-300">${name}</div>
+                    <div class="flex gap-1 flex-wrap justify-center min-h-[18px]" id="pawn-container-${i}"></div>
+                `;
+                board.appendChild(tile);
+            });
+            renderPawns();
+        }
+
+        function renderPawns() {
+            document.querySelectorAll('[id^="pawn-container-"]').forEach(c => c.innerHTML = '');
+            const colorClasses = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-red-500'];
+            players.forEach(p => {
+                const container = document.getElementById(`pawn-container-${p.pos}`);
+                if (container) {
+                    const pawn = document.createElement('div');
+                    pawn.className = `pawn-dot ${colorClasses[p.id - 1]}`;
+                    pawn.title = `Especialista ${p.id}`;
+                    container.appendChild(pawn);
+                }
+            });
+        }
+
+        function updateScoreboard() {
+            players.forEach((p, idx) => {
+                const card = document.getElementById(`p${p.id}-card`);
+                if (card) {
+                    const isActive = idx === currentPlayerIndex;
+                    card.classList.toggle('opacity-100', isActive);
+                    card.classList.toggle('opacity-50', !isActive);
+                    card.classList.toggle('scale-105', isActive);
+                    card.classList.toggle('shadow-xl', isActive);
+                    document.getElementById(`p${p.id}-pos`).innerText = `Casa: ${p.pos}`;
+                }
+            });
+        }
+
+        function rollDice() {
+            document.getElementById('btn-roll').disabled = true;
+            let count = 0;
+            const diceDisplay = document.getElementById('dice-result');
+            
+            const interval = setInterval(() => {
+                playBeep(300 + count * 20, 'sine', 0.05);
+                diceDisplay.innerText = `🎲 ${Math.floor(Math.random() * 6) + 1}`;
+                count++;
+                if (count > 8) {
+                    clearInterval(interval);
+                    let val = Math.floor(Math.random() * 6) + 1;
+                    diceDisplay.innerText = `🎲 ${val}`;
+                    playBeep(600, 'triangle', 0.15);
+                    setTimeout(() => movePlayer(val), 400);
+                }
+            }, 70);
+        }
+
+        function movePlayer(steps) {
+            let p = players[currentPlayerIndex];
+            p.prev = p.pos;
+            p.pos += steps;
+            if (p.pos >= tileProcesses.length) p.pos = tileProcesses.length - 1;
+            renderPawns();
+            
+            setTimeout(() => {
+                handleTileAction();
+            }, 500);
+        }
+
+        function handleTileAction() {
+            let p = players[currentPlayerIndex];
+            let process = tileProcesses[p.pos];
+
+            if (process.includes('Carta')) {
+                triggerCard();
+            } else if (p.pos === 0) {
+                nextTurn();
+            } else {
+                triggerQuestion(process, p.pos);
+            }
+        }
+
+        function triggerQuestion(proc, tileIndex) {
+            let levelKey = 'level1';
+            let diffBadgeText = '🟢 Nível 1: Básico';
+            let diffBadgeClass = 'bg-emerald-500 text-slate-950';
+
+            if (tileIndex >= 8 && tileIndex < 21) {
+                levelKey = 'level2';
+                diffBadgeText = '🟡 Nível 2: Intermediário (Casa 8+)';
+                diffBadgeClass = 'bg-amber-500 text-slate-950';
+            } else if (tileIndex >= 21 && tileIndex < 36) {
+                levelKey = 'level3';
+                diffBadgeText = '🟠 Nível 3: Avançado';
+                diffBadgeClass = 'bg-orange-500 text-slate-950';
+            } else if (tileIndex >= 36) {
+                levelKey = 'level4';
+                diffBadgeText = '🎲 Nível 4: Sorteio Aleatório (Níveis 1, 2 e 3)';
+                diffBadgeClass = 'bg-purple-500 text-white';
+            }
+
+            let pool = [];
+            if (levelKey === 'level4') {
+                // Junta todas as perguntas dos três níveis anteriores para sorteio totalmente aleatório
+                pool = [
+                    ...questionsDatabase.level1, 
+                    ...questionsDatabase.level2, 
+                    ...questionsDatabase.level3
+                ];
+            } else {
+                pool = questionsDatabase[levelKey];
+            }
+            const qData = pool[Math.floor(Math.random() * pool.length)];
+
+            document.getElementById('q-process').innerText = proc;
+            const badge = document.getElementById('q-diff-badge');
+            badge.innerText = diffBadgeText;
+            badge.className = `text-xs font-bold px-3 py-1 rounded-md ${diffBadgeClass}`;
+
+            document.getElementById('q-text').innerText = qData.q;
+            
+            const qOptions = document.getElementById('q-options');
+            qOptions.innerHTML = '';
+
+            let options = [
+                { text: qData.correct, isCorrect: true },
+                ...qData.wrongs.map(w => ({ text: w, isCorrect: false }))
+            ];
+
+            options.sort(() => Math.random() - 0.5);
+
+            const letters = ['A', 'B', 'C', 'D'];
+            options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-opt text-left p-3 md:p-4 rounded-xl text-xs md:text-sm font-medium text-slate-200 leading-snug w-full flex items-start gap-2';
+                btn.innerHTML = `<span class="font-black text-cyan-400 shrink-0">${letters[idx]})</span> <span>${opt.text}</span>`;
+                btn.onclick = () => checkAnswer(opt.isCorrect);
+                qOptions.appendChild(btn);
+            });
+
+            let timeSec = parseInt(document.getElementById('question-time-limit').value) || 35;
+            startTimer(timeSec);
+            openModal('question-modal');
+        }
+
+        function checkAnswer(isCorrect) {
+            clearInterval(timer);
+            closeModal('question-modal');
+            let p = players[currentPlayerIndex];
+
+            if (isCorrect) {
+                playSuccessSound();
+                alert(`✅ AUDITORIA APROVADA!\n\nExcelente resposta técnica. O Especialista ${p.id} avança +2 casas adicionais como bônus!`);
+                p.pos += 2;
+                if (p.pos >= tileProcesses.length - 1) p.pos = tileProcesses.length - 1;
+                renderPawns();
+            } else {
+                playErrorSound();
+                alert(`❌ NÃO CONFORMIDADE!\n\nResposta incorreta. O Especialista ${p.id} retornou para a casa de origem da jogada (#${p.prev}).`);
+                p.pos = p.prev;
+                renderPawns();
+            }
+
+            if (p.pos === tileProcesses.length - 1) {
+                playSuccessSound();
+                alert(`🏆 PARABÉNS!\n\nO Especialista ${p.id} atingiu o topo do processo e tornou-se MESTRE DA QUALIDADE!`);
+                location.reload();
+            } else {
+                nextTurn();
+            }
+        }
+
+        function triggerCard() {
+            playCardSound();
+            let card = cardsDatabase[Math.floor(Math.random() * cardsDatabase.length)];
+            activeCardEffect = card;
+            document.getElementById('card-text').innerText = card.text;
+            openModal('card-modal');
+        }
+
+        function applyCardEffect() {
+            closeModal('card-modal');
+            let p = players[currentPlayerIndex];
+            p.pos += activeCardEffect.steps;
+            if (p.pos < 0) p.pos = 0;
+            if (p.pos >= tileProcesses.length) p.pos = tileProcesses.length - 1;
+            renderPawns();
+            
+            triggerQuestion(tileProcesses[p.pos], p.pos);
+        }
+
+        function nextTurn() {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            document.getElementById('btn-roll').disabled = false;
+            updateScoreboard();
+        }
+
+        function startTimer(sec) {
+            let s = sec;
+            const display = document.getElementById('q-timer');
+            display.innerText = `⏱️ ${s}s`;
+            clearInterval(timer);
+            timer = setInterval(() => {
+                s--;
+                display.innerText = `⏱️ ${s}s`;
+                if (s <= 5 && s > 0) {
+                    playBeep(800, 'square', 0.05);
+                }
+                if (s <= 0) {
+                    clearInterval(timer);
+                    playErrorSound();
+                    alert("⏱️ TEMPO ESGOTADO!\n\nO tempo de resposta expirou. Não conformidade atribuída.");
+                    checkAnswer(false);
+                }
+            }, 1000);
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    </script>
+</body>
+</html>

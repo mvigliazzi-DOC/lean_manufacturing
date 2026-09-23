@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub de Desafios: Gestão Empresarial & Lean Operations</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --accent-hover: #0284c7;
+            --border-color: #334155;
+            --gold: #f59e0b;
+            --green: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            max-width: 800px;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            color: var(--accent-color);
+            font-size: 2.4rem;
+            margin-bottom: 12px;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        .card-badge {
+            align-self: flex-start;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .badge-multiplayer { background-color: rgba(56, 189, 248, 0.2); color: var(--accent-color); border: 1px solid var(--accent-color); }
+        .badge-local { background-color: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+        .badge-custom { background-color: rgba(245, 158, 11, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+
+        .card h2 {
+            font-size: 1.35rem;
+            margin-bottom: 12px;
+            color: #fff;
+            line-height: 1.3;
+        }
+
+        .card p {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .card-features {
+            list-style: none;
+            margin-bottom: 25px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .card-features li {
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-play {
+            display: block;
+            text-align: center;
+            background-color: var(--accent-color);
+            color: #0f172a;
+            font-weight: bold;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-play:hover {
+            background-color: var(--accent-hover);
+            color: #fff;
+        }
+
+        footer {
+            margin-top: 50px;
+            color: #64748b;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎮 Portal de Jogos de Estratégia Empresarial</h1>
+        <p>Escolha o seu desafio, teste seus conhecimentos operacionais e lidere a sua equipe rumo à máxima eficiência técnica e gerencial.</p>
+    </header>
+
+    <main class="container">
+
+        <!-- Card 1: Gestão Empresarial Rede -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-multiplayer">🌐 Online Multiplayer (P2P)</span>
+                <h2>Desafio do CEO: A Era da Gestão & Conectividade</h2>
+                <p>Enfrente outros gestores em tempo real! Tome decisões estratégicas sobre finanças, estruturas organizacionais, PCP e revolução industrial em uma disputa P2P conectada via WebRTC.</p>
+                <ul class="card-features">
+                    <li>👥 2 a 4 Jogadores Online via Código de Sala</li>
+                    <li>📚 Inclui Guia Prático de Estudos em Modal</li>
+                    <li>⏱️ Perguntas com Timer e Graduação de Dificuldade</li>
+                </ul>
+            </div>
+            <a href="GT_Gestão_Empresarial-rede.html" class="btn-play">Iniciar Partida Online 🚀</a>
+        </article>
+
+        <!-- Card 2: Lean Classificação Local -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-local">🏭 Modo Local / Treinamento</span>
+                <h2>Mundo Lean: A Caça Incansável aos 8 Desperdícios</h2>
+                <p>Domine a classificação de atividades sob a ótica Lean (Agrega Valor, Necessária e Desperdício). Avalie cenários reais de chão de fábrica e elimine tudo o que não agrega valor ao cliente.</p>
+                <ul class="card-features">
+                    <li>🎯 Foco em Agregação de Valor e 8 Desperdícios</li>
+                    <li>♟️ Tabuleiro de 50 Casas com Casas Bônus/Ônus</li>
+                    <li>🧠 Banco de Questões Avançadas e Atualizadas</li>
+                </ul>
+            </div>
+            <a href="LEAN-Classificação_Agrega_Necessária_Desperdício_local.html" class="btn-play">Entrar na Fábrica Lean ⚡</a>
+        </article>
+
+        <!-- Card 3: Lean Anticonflito Personalizado -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-custom">⚔️ Modo Personalizado & Anticonflito</span>
+                <h2>Arena Lean: Duelo de Eficiência e Fluxo Contínuo</h2>
+                <p>Entre na arena competitiva com regras rigorosas de movimento e personalização total dos nomes dos jogadores. Prove quem domina VSM, Jidoka, Takt Time e Sistemas Puxados.</p>
+                <ul class="card-features">
+                    <li>✏️ Nomes dos Jogadores 100% Personalizáveis</li>
+                    <li>🛡️ Mapeamento de Casas Garantido Anticonflito</li>
+                    <li>⚡ Dinâmica Ágil de 30s por Rodada</li>
+                </ul>
+            </div>
+            <a href="LEAN-Nomes_Personalizados_Regras_Anticonflito.html" class="btn-play">Aceitar o Duelo 🎯</a>
+        </article>
+
+    </main>
+
+    <footer>
+        <p>Desenvolvido para Treinamento de Engenharia de Produção & Gestão Operacional • 2026</p>
+    </footer>
+
+</body>
+</html>

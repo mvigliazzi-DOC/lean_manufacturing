@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Tabuleiro - Lean Manufacturing (Nomenclatura Atualizada)</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --p1-color: #ef4444; /* Vermelho */
+            --p2-color: #3b82f6; /* Azul */
+            --p3-color: #10b981; /* Verde */
+            --p4-color: #f59e0b; /* Amarelo */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: var(--accent-color);
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        /* Controles Principais */
+        .controls-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .players-inputs {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            border-top: 1px solid #334155;
+            padding-top: 12px;
+        }
+
+        .player-input-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #0f172a;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+        }
+
+        .player-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot-p1 { background-color: var(--p1-color); }
+        .dot-p2 { background-color: var(--p2-color); }
+        .dot-p3 { background-color: var(--p3-color); }
+        .dot-p4 { background-color: var(--p4-color); }
+
+        input[type="text"] {
+            background-color: transparent;
+            border: none;
+            color: var(--text-color);
+            font-weight: bold;
+            font-size: 0.9rem;
+            width: 110px;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-bottom: 1px solid var(--accent-color);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select, button {
+            background-color: #0f172a;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button.btn-roll {
+            background-color: var(--accent-color);
+            color: #0f172a;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        button.btn-roll:hover:not(:disabled) {
+            background-color: #0284c7;
+            color: #fff;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .dice-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #f59e0b;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .turn-display {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        /* Tabuleiro de 50 Casas */
+        .board-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+            width: 100%;
+            max-width: 1100px;
+            margin-bottom: 20px;
+            background-color: #334155;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .tile {
+            background-color: var(--card-bg);
+            border: 2px solid #475569;
+            border-radius: 6px;
+            height: 75px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px;
+            position: relative;
+        }
+
+        .tile-number {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #94a3b8;
+            align-self: flex-start;
+        }
+
+        .tile-tag {
+            font-size: 0.6rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        /* Tipos de Casas */
+        .tile-start { border-color: #10b981; background-color: rgba(16, 185, 129, 0.15); }
+        .tile-end { border-color: #f59e0b; background-color: rgba(245, 158, 11, 0.15); }
+        
+        .tile-bonus { 
+            border-color: #10b981; 
+            background-color: rgba(16, 185, 129, 0.25); 
+        }
+        .tile-bonus .tile-tag { color: #10b981; }
+
+        .tile-penalty { 
+            border-color: #ef4444; 
+            background-color: rgba(239, 68, 68, 0.25); 
+        }
+        .tile-penalty .tile-tag { color: #ef4444; }
+
+        .pawns-container {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pawn {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1.5px solid #ffffff;
+            box-shadow: 0 0 4px rgba(0,0,0,0.6);
+            transition: all 0.3s ease;
+        }
+
+        .p1 { background-color: var(--p1-color); }
+        .p2 { background-color: var(--p2-color); }
+        .p3 { background-color: var(--p3-color); }
+        .p4 { background-color: var(--p4-color); }
+
+        /* Modal da Pergunta */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 700px;
+            width: 90%;
+            border: 2px solid var(--accent-color);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
+
+        .timer {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ef4444;
+            background-color: #0f172a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid #ef4444;
+        }
+
+        .question-text {
+            font-size: 1.05rem;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #0f172a;
+            color: var(--text-color);
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+            line-height: 1.3;
+        }
+
+        .option-btn:hover {
+            border-color: var(--accent-color);
+            background-color: #1e293b;
+        }
+
+        .feedback-msg {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.05rem;
+            text-align: center;
+        }
+
+        /* Modal Fim de Jogo */
+        .win-modal-content {
+            text-align: center;
+        }
+
+        .win-modal-content h2 {
+            color: #10b981;
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 900px) {
+            .board-container { grid-template-columns: repeat(5, 1fr); }
+            .tile { height: 70px; }
+        }
+
+        @media (max-width: 500px) {
+            .board-container { grid-template-columns: repeat(4, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Jogo de Tabuleiro: Lean Manufacturing</h1>
+        <p>50 Casas • Tempo: 45s • Classificação: Agrega, Necessária e Desperdício</p>
+    </header>
+
+    <div class="controls-bar">
+        <div class="controls-row">
+            <div class="control-group">
+                <label for="num-players">Qtd. Jogadores:</label>
+                <select id="num-players" onchange="resetGame()">
+                    <option value="2">2 Jogadores</option>
+                    <option value="3">3 Jogadores</option>
+                    <option value="4" selected>4 Jogadores</option>
+                </select>
+            </div>
+
+            <div class="turn-display" id="turn-display">Vez de: Jogador 1</div>
+            <button class="btn-roll" id="btn-roll" onclick="rollDice()">🎲 Rolar Dado</button>
+            <div class="dice-display" id="dice-display">Dado: -</div>
+        </div>
+
+        <!-- Campos para Personalização dos Nomes -->
+        <div class="players-inputs" id="players-inputs-container"></div>
+    </div>
+
+    <!-- Tabuleiro de 50 Casas -->
+    <div class="board-container" id="board"></div>
+
+    <!-- Modal de Perguntas -->
+    <div class="modal" id="question-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="question-topic" style="color: var(--accent-color); font-weight: bold;">Tema</span>
+                <div class="timer" id="timer">⏱️ 45s</div>
+            </div>
+            <div class="question-text" id="question-text">Pergunta...</div>
+            <div class="options-container" id="options-container"></div>
+            <div class="feedback-msg" id="feedback-msg"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Vitória -->
+    <div class="modal" id="win-modal">
+        <div class="modal-content win-modal-content">
+            <h2>🏆 Parabéns! 🏆</h2>
+            <p id="winner-text" style="font-size: 1.2rem; margin-bottom: 20px;"></p>
+            <button class="btn-roll" onclick="resetGame()">Reiniciar Partida</button>
+        </div>
+    </div>
+
+    <script>
+        // Mapeamento Garantido Anticonflito:
+        // Bônus (+2): 7->9, 17->19, 27->29, 37->39, 44->46
+        // Ônus (-3):  12->9, 22->19, 32->29, 42->39, 48->45
+        const bonusTiles = [7, 17, 27, 37, 44];
+        const penaltyTiles = [12, 22, 32, 42, 48];
+
+        const BONUS_VALUE = 2;
+        const PENALTY_VALUE = 3;
+
+        // Banco de Perguntas Avançadas (Nomenclatura Atualizada: Necessária, Agrega, Desperdício)
+        const questionsDatabase = [
+            {
+                topic: "Classificação de Agregação de Valor - Testes Obrigatórios",
+                question: "Em uma fábrica de dispositivos médicos, a legislação sanitária exige a amostragem e a retenção de lotes para testes de esterilidade antes da liberação ao mercado. Como essa etapa é classificada sob a ótica Lean?",
+                options: [
+                    "Necessária, pois não transforma o produto sob a ótica direta do cliente, mas é indispensável pelas condições atuais de compliance e legislação.",
+                    "Necessária, pois o cliente final está disposto a pagar diretamente pelo tempo gasto com a amostragem de qualidade e retenção.",
+                    "Agrega, pois a garantia de esterilidade altera o estado de conformidade legal exigido na proposta do produto.",
+                    "Desperdício, devendo ser eliminada imediatamente para reduzir o Lead Time do lote."
+                ],
+                answer: 0
+            },
+            {
+                topic: "Conceito e Critérios da Categoria Agrega",
+                question: "Para que uma atividade receba a classificação de 'Agrega' (Atividade que agrega valor), ela precisa atender a 3 critérios simultâneos. Analise as opções e identifique a correta:",
+                options: [
+                    "O cliente deve estar disposto a pagar; a atividade deve modificar fisicamente/quimicamente o produto ou serviço; e deve ser realizada corretamente na primeira tentativa.",
+                    "O cliente deve estar disposto a pagar; a atividade deve aumentar a margem de lucro operacional da empresa; e deve ser realizada na primeira tentativa.",
+                    "O setor comercial aprova a etapa; a atividade transforma o produto de acordo com o projeto; e atende aos requisitos estatísticos de qualidade.",
+                    "O cliente percebe utilidade na etapa; o material sofre inspeção de recebimento sem falhas; e o tempo de processamento é menor que o Takt Time."
+                ],
+                answer: 0
+            },
+            {
+                topic: "Classificação de Valor - Desperdício vs Necessária",
+                question: "Um operador precisa caminhar 12 metros para pegar ferramentas por falta de organização do posto (Cenário A) e preenche um formulário interno de rastreabilidade exigido por lei (Cenário B). A correta classificação Lean é:",
+                options: [
+                    "Cenário A é Desperdício e Cenário B é Necessária.",
+                    "Cenário A é Necessária e Cenário B é Desperdício.",
+                    "Ambos os cenários são classificados como Necessária, pois dependem da estrutura atual da empresa.",
+                    "Ambos os cenários são classificados como Desperdício."
+                ],
+                answer: 0
+            },
+            {
+                topic: "8 Desperdícios - Transporte vs Movimentação",
+                question: "Em um evento Kaizen, foram identificados dois problemas: uma empilhadeira move paletes entre galpões distantes (Situação 1) e um operador se curva excessivamente para pegar peças no chão (Situação 2). A correta distinção dos desperdícios é:",
+                options: [
+                    "Situação 1 é Desperdício de Transporte (movimentação de materiais); Situação 2 é Desperdício de Movimentação (movimento do operador).",
+                    "Situação 1 é Desperdício de Movimentação; Situação 2 é Desperdício de Transporte.",
+                    "Situação 1 é Desperdício de Logística Externa; Situação 2 é uma atividade Necessária por ergonomia.",
+                    "Ambas as situações enquadram-se como atividades que Agrega valor."
+                ],
+                answer: 0
+            },
+            {
+                topic: "8 Desperdícios - Superprodução",
+                question: "Taiichi Ohno enfatizava que a Superprodução é a 'raiz de todos os males' no chão de fábrica. O motivo técnico primário para tal afirmação é:",
+                options: [
+                    "A Superprodução esconde e multiplica todos os outros tipos de Desperdício (estoques intermediários, transportes desnecessários, retrabalhos e esperas).",
+                    "A Superprodução transforma atividades que Agrega em atividades Necessária.",
+                    "A Superprodução reduz diretamente o preço final praticado pelos concorrentes no mercado consumidor.",
+                    "A Superprodução impossibilita a contratação de mão de obra temporária nos picos de demanda."
+                ],
+                answer: 0
+            },
+            {
+                topic: "8 Desperdícios - Espera",
+                question: "Um operador de torno mecânico fica 8 minutos parado enquanto a máquina executa o desbaste automático de um eixo. Como o Lean trata e tenta resolver essa situação específica de 'Espera'?",
+                options: [
+                    "Identifica o tempo de espera como Desperdício e busca atribuir tarefas paralelas de preparação ou inspeção durante o ciclo automático.",
+                    "Aumenta a velocidade de rotação do torno mecânico para zerar o tempo de máquina.",
+                    "Reclassifica a ociosidade do operador como uma atividade que Agrega valor de observação preventiva.",
+                    "Mapeia a ociosidade como uma atividade Necessária e mantém a rotina inalterada."
+                ],
+                answer: 0
+            },
+            {
+                topic: "8 Desperdícios - Processamento Excessivo",
+                question: "Qual das alternativas abaixo diferencia de forma precisa o desperdício de 'Processamento Excessivo' em relação às demais categorias?",
+                options: [
+                    "O Processamento Excessivo é um Desperdício que consiste em realizar etapas que o cliente não exige ou não está disposto a pagar, mesmo com o produto perfeito.",
+                    "O Processamento Excessivo é uma atividade Necessária que não pode ser otimizada.",
+                    "O Processamento Excessivo é a única forma de garantir que uma atividade se torne Agrega.",
+                    "O Processamento Excessivo refere-se unicamente ao tempo gasto com transporte entre máquinas."
+                ],
+                answer: 0
+            },
+            {
+                topic: "8 Desperdícios - Talento Não Utilizado",
+                question: "Qual postura gerencial retrata com exatidão a manifestação do desperdício de 'Talento Não Utilizado' (8º Desperdício)?",
+                options: [
+                    "Tratar os operadores de linha apenas como executores de tarefas, ignorando suas ideias de melhoria e gerando um enorme Desperdício de conhecimento.",
+                    "Alocar engenheiros para realizar manutenções simples classificadas como Agrega.",
+                    "Não oferecer bolsas de estudo e auxílio faculdade para os cargos operacionais da empresa.",
+                    "Classificar todas as sugestões dos operadores como uma atividade Necessária."
+                ],
+                answer: 0
+            },
+            {
+                topic: "8 Desperdícios - Estoque",
+                question: "Na analogia Lean do 'Rio de Estoques', o que representam o 'nível da água' e as 'pedras no fundo do rio'?",
+                options: [
+                    "O nível da água representa o Desperdício de estoque imobilizado; as pedras representam os problemas operacionais ocultos (quebras, setups longos, refugo).",
+                    "O nível da água representa o lucro da empresa; as pedras representam os custos fixos de manufatura.",
+                    "O nível da água representa as atividades que Agrega; as pedras representam as atividades Necessária.",
+                    "O nível da água representa a demanda do cliente; as pedras representam a capacidade produtiva máxima."
+                ],
+                answer: 0
+            },
+            {
+                topic: "Princípio Lean - Puxar vs Empurrar",
+                question: "Em termos de geração de desperdícios no fluxo de valor, qual é a falha estrutural primária de um sistema de produção Empurrado (Push)?",
+                options: [
+                    "Produzir com base em estimativas centralizadas, gerando um grande Desperdício de estoque e desalinhamento com a demanda do cliente.",
+                    "Depender exclusivamente do cartão Kanban para movimentar o material, gerando paradas por falta de insumo.",
+                    "Aumentar o tempo de setup por não utilizar o nivelamento de produção (Heijunka).",
+                    "Eliminar completamente as etapas classificadas como Necessária no fluxo produtivo."
+                ],
+                answer: 0
+            },
+            {
+                topic: "Visão Lean de Custo e Preço",
+                question: "No modelo mental Lean para mercados competitivos, como se estruturam as variáveis de Preço, Custo e Lucro?",
+                options: [
+                    "Lucro = Preço (ditado pelo mercado) - Custo (que deve ser reduzido eliminando todo tipo de Desperdício).",
+                    "Preço de Venda = Custo de Fabricação + Margem de Lucro Desejada (repassando o Desperdício ao cliente).",
+                    "Custo = Preço de Venda - Margem de Lucro Desejada (fixada unilateralmente pelo setor financeiro).",
+                    "Lucro = Preço (ditado pela empresa) - Custo Variável (focado apenas em atividades que Agrega)."
+                ],
+                answer: 0
+            },
+            {
+                topic: "Mapeamento do Fluxo de Valor (VSM) - Eficiência",
+                question: "Ao analisar um VSM em uma fábrica tradicional, descobre-se que o tempo em que o produto passa por etapas que realmente Agrega valor representa:",
+                options: [
+                    "Geralmente menos de 5% do Lead Time total, sendo todo o restante composto por Desperdício e etapas Necessária.",
+                    "Entre 25% e 40%, pois o transporte é considerado uma etapa que Agrega.",
+                    "Mais de 80%, pois quase todo o tempo de permanência na fábrica gera valor direto.",
+                    "Sempre 100%, já que qualquer etapa fabril é automaticamente classificada como Agrega."
+                ],
+                answer: 0
+            },
+            {
+                topic: "Qualidade na Fonte e Jidoka",
+                question: "Para combater radicalmente o Desperdício de Defeitos e Retrabalho, qual a diferença essencial entre uma abordagem tradicional e a abordagem Jidoka (Lean)?",
+                options: [
+                    "A abordagem tradicional busca detectar erros na inspeção final; o Jidoka para o processo na fonte ao primeiro sinal de anomalia para evitar a continuidade do Desperdício.",
+                    "A abordagem tradicional foca em Poka-Yokes; o Jidoka foca em auditorias quinzenais.",
+                    "A abordagem tradicional elimina refugo via reciclagem; o Jidoka reclassifica o refugo como atividade Necessária.",
+                    "Ambas focam na parada da linha, mas o Jidoka exige aprovação gerencial prévia."
+                ],
+                answer: 0
+            },
+            {
+                topic: "Lean Office - Processos Administrativos",
+                question: "Um fluxo administrativo possui requisições de compra paradas por dias em caixas de e-mail aguardando assinaturas. Essa retenção é mapeada no Lean Office como:",
+                options: [
+                    "Desperdício de Estoque/Espera (Trabalho em Processo / WIP de Informação).",
+                    "Atividade que Agrega valor direto ao cliente corporativo.",
+                    "Atividade Necessária, não podendo sofrer nenhum tipo de otimização.",
+                    "Desperdício exclusivo de Processamento Excessivo de Dados."
+                ],
+                answer: 0
+            },
+            {
+                topic: "5S e Redução de Desperdícios",
+                question: "O senso de Seiton (Ordenação) e o senso de Seiri (Utilização) atacam prioritariamente quais elementos do processo?",
+                options: [
+                    "Seiri elimina o Desperdício de itens inúteis/excesso; Seiton elimina o Desperdício de movimentação e tempo de procura.",
+                    "Seiri transforma Desperdício em Agrega; Seiton transforma Necessária em Agrega.",
+                    "Seiri reduz o tempo de transporte rodoviário; Seiton reduz o Takt Time da fábrica.",
+                    "Ambos focam exclusivamente na eliminação de inspeções que Agrega."
+                ],
+                answer: 0
+            }
+        ];
+
+        // Estado do Jogo
+        let totalTiles = 50;
+        let numPlayers = 4;
+        let playerNames = ["Jogador 1", "Jogador 2", "Jogador 3", "Jogador 4"];
+        let currentPlayer = 0;
+        let playerPositions = [1, 1, 1, 1];
+        let availableQuestions = [];
+        let currentDiceRoll = 0;
+        let timerInterval = null;
+        let currentQuestion = null;
+
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function renderPlayerInputs() {
+            const container = document.getElementById('players-inputs-container');
+            container.innerHTML = '';
+
+            for (let i = 0; i < numPlayers; i++) {
+                const group = document.createElement('div');
+                group.classList.add('player-input-group');
+
+                const dot = document.createElement('div');
+                dot.classList.add('player-color-dot', `dot-p${i + 1}`);
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = playerNames[i] || `Jogador ${i + 1}`;
+                input.placeholder = `Jogador ${i + 1}`;
+                
+                input.onchange = (e) => {
+                    const val = e.target.value.trim();
+                    playerNames[i] = val !== '' ? val : `Jogador ${i + 1}`;
+                    updateTurnDisplay();
+                    updatePawns();
+                };
+
+                group.appendChild(dot);
+                group.appendChild(input);
+                container.appendChild(group);
+            }
+        }
+
+        function getPlayerName(index) {
+            return playerNames[index] || `Jogador ${index + 1}`;
+        }
+
+        function updateTurnDisplay() {
+            document.getElementById('turn-display').innerText = `Vez de: ${getPlayerName(currentPlayer)}`;
+        }
+
+        function initBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+
+            for (let i = 1; i <= totalTiles; i++) {
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                
+                let tagText = '';
+
+                if (i === 1) {
+                    tile.classList.add('tile-start');
+                    tagText = 'Início';
+                } else if (i === totalTiles) {
+                    tile.classList.add('tile-end');
+                    tagText = 'Chegada';
+                } else if (bonusTiles.includes(i)) {
+                    tile.classList.add('tile-bonus');
+                    tagText = `+${BONUS_VALUE} Bônus`;
+                } else if (penaltyTiles.includes(i)) {
+                    tile.classList.add('tile-penalty');
+                    tagText = `-${PENALTY_VALUE} Ônus`;
+                }
+
+                tile.innerHTML = `
+                    <span class="tile-number">${i}</span>
+                    <span class="tile-tag">${tagText}</span>
+                    <div class="pawns-container" id="tile-${i}"></div>
+                `;
+                board.appendChild(tile);
+            }
+            updatePawns();
+        }
+
+        function updatePawns() {
+            for (let i = 1; i <= totalTiles; i++) {
+                document.getElementById(`tile-${i}`).innerHTML = '';
+            }
+
+            for (let p = 0; p < numPlayers; p++) {
+                const pos = playerPositions[p];
+                const pawn = document.createElement('div');
+                pawn.classList.add('pawn', `p${p + 1}`);
+                pawn.title = getPlayerName(p);
+                document.getElementById(`tile-${pos}`).appendChild(pawn);
+            }
+        }
+
+        function resetGame() {
+            numPlayers = parseInt(document.getElementById('num-players').value, 10);
+            currentPlayer = 0;
+            playerPositions = [1, 1, 1, 1];
+            availableQuestions = JSON.parse(JSON.stringify(questionsDatabase));
+            currentDiceRoll = 0;
+
+            document.getElementById('dice-display').innerText = 'Dado: -';
+            updateTurnDisplay();
+            document.getElementById('btn-roll').disabled = false;
+            document.getElementById('win-modal').style.display = 'none';
+
+            renderPlayerInputs();
+            initBoard();
+        }
+
+        function rollDice() {
+            document.getElementById('btn-roll').disabled = true;
+            currentDiceRoll = Math.floor(Math.random() * 6) + 1;
+            document.getElementById('dice-display').innerText = `Dado: 🎲 ${currentDiceRoll}`;
+
+            setTimeout(() => {
+                triggerQuestion();
+            }, 800);
+        }
+
+        function triggerQuestion() {
+            if (availableQuestions.length === 0) {
+                availableQuestions = JSON.parse(JSON.stringify(questionsDatabase));
+            }
+
+            const qIndex = Math.floor(Math.random() * availableQuestions.length);
+            const rawQuestion = availableQuestions.splice(qIndex, 1)[0];
+
+            const correctAnswerText = rawQuestion.options[rawQuestion.answer];
+
+            let mappedOptions = rawQuestion.options.map(opt => ({
+                text: opt,
+                isCorrect: opt === correctAnswerText
+            }));
+
+            mappedOptions = shuffleArray(mappedOptions);
+
+            currentQuestion = {
+                topic: rawQuestion.topic,
+                question: rawQuestion.question,
+                options: mappedOptions.map(o => o.text),
+                correctIndex: mappedOptions.findIndex(o => o.isCorrect)
+            };
+
+            document.getElementById('question-topic').innerText = `Tema: ${currentQuestion.topic}`;
+            document.getElementById('question-text').innerText = currentQuestion.question;
+            document.getElementById('feedback-msg').innerText = '';
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            currentQuestion.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.classList.add('option-btn');
+                btn.innerText = `${String.fromCharCode(65 + idx)}) ${optText}`;
+                btn.onclick = () => evaluateAnswer(idx);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('question-modal').style.display = 'flex';
+            startTimer();
+        }
+
+        function startTimer() {
+            let timeRemaining = 45;
+            const timerEl = document.getElementById('timer');
+            timerEl.innerText = `⏱️ ${timeRemaining}s`;
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                timerEl.innerText = `⏱️ ${timeRemaining}s`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function handleTimeOut() {
+            disableOptions();
+            const feedback = document.getElementById('feedback-msg');
+            feedback.style.color = '#ef4444';
+            feedback.innerText = '❌ Tempo esgotado! Você permanece na mesma casa.';
+            
+            setTimeout(() => {
+                closeModalAndNext();
+            }, 2500);
+        }
+
+        function evaluateAnswer(selectedIdx) {
+            clearInterval(timerInterval);
+            disableOptions();
+
+            const feedback = document.getElementById('feedback-msg');
+            const isCorrect = (selectedIdx === currentQuestion.correctIndex);
+
+            if (isCorrect) {
+                let initialPos = playerPositions[currentPlayer];
+                let targetPos = initialPos + currentDiceRoll;
+                
+                if (targetPos >= totalTiles) {
+                    targetPos = totalTiles;
+                }
+
+                let extraMsg = "";
+                if (bonusTiles.includes(targetPos)) {
+                    targetPos = Math.min(totalTiles, targetPos + BONUS_VALUE);
+                    extraMsg = ` 🚀 CAIU EM CASA BÔNUS! Avançou +${BONUS_VALUE} casas extras!`;
+                } else if (penaltyTiles.includes(targetPos)) {
+                    targetPos = Math.max(1, targetPos - PENALTY_VALUE);
+                    extraMsg = ` ⚠️ CAIU EM CASA ÔNUS! Recuou -${PENALTY_VALUE} casas!`;
+                }
+
+                playerPositions[currentPlayer] = targetPos;
+                updatePawns();
+
+                feedback.style.color = '#10b981';
+                feedback.innerText = `✓ Resposta Correta! Avançou ${currentDiceRoll} casa(s).${extraMsg}`;
+
+            } else {
+                feedback.style.color = '#ef4444';
+                feedback.innerText = `❌ Resposta Incorreta! A alternativa correta era ${String.fromCharCode(65 + currentQuestion.correctIndex)}. Você não avança.`;
+            }
+
+            setTimeout(() => {
+                if (playerPositions[currentPlayer] === totalTiles) {
+                    showWinModal();
+                } else {
+                    closeModalAndNext();
+                }
+            }, 3200);
+        }
+
+        function disableOptions() {
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(b => b.disabled = true);
+        }
+
+        function closeModalAndNext() {
+            document.getElementById('question-modal').style.display = 'none';
+            document.getElementById('btn-roll').disabled = false;
+            
+            currentPlayer = (currentPlayer + 1) % numPlayers;
+            updateTurnDisplay();
+            document.getElementById('dice-display').innerText = 'Dado: -';
+        }
+
+        function showWinModal() {
+            document.getElementById('question-modal').style.display = 'none';
+            document.getElementById('winner-text').innerText = `🎉 ${getPlayerName(currentPlayer)} superou o percurso e venceu a partida de Lean Manufacturing! 🎉`;
+            document.getElementById('win-modal').style.display = 'flex';
+        }
+
+        resetGame();
+    </script>
+</body>
+</html>
