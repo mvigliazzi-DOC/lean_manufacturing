@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo de Tabuleiro - Gestão Empresarial (Multiplayer Online)</title>
-    <!-- PeerJS Library para Conexão P2P via WebRTC -->
+    <title>Jogo de Tabuleiro - Gestão Empresarial</title>
+    <!-- PeerJS Library para Conexão P2P via WebRTC no modo Online -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -46,6 +46,38 @@
             margin-bottom: 5px;
         }
 
+        .mode-selector-bar {
+            background-color: #1e293b;
+            border: 2px solid #334155;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .mode-switch {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mode-switch select {
+            background-color: #0f172a;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
         .network-bar {
             background-color: #1e293b;
             border: 2px solid var(--accent-color);
@@ -59,6 +91,7 @@
             gap: 15px;
             align-items: center;
             justify-content: space-between;
+            transition: all 0.3s ease;
         }
 
         .net-group {
@@ -118,6 +151,15 @@
             padding: 4px 10px;
             border-radius: 6px;
             border: 1px solid #334155;
+        }
+
+        .player-input-group input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 0.9rem;
+            width: 110px;
+            outline: none;
         }
 
         .player-color-dot {
@@ -460,15 +502,27 @@
 
     <header>
         <h1>Jogo de Tabuleiro: Gestão Empresarial</h1>
-        <p>Modo Multiplayer Online via Rede (Peer-to-Peer) • Até 4 Jogadores</p>
+        <p>Aprenda conceitos de gestão e produção jogando em até 4 pessoas</p>
     </header>
 
-    <!-- Barra de Conexão Multiplayer -->
-    <div class="network-bar">
+    <!-- Barra de Seleção de Modo -->
+    <div class="mode-selector-bar">
+        <div class="mode-switch">
+            <label for="game-mode-select">🎮 <strong>Modo de Jogo:</strong></label>
+            <select id="game-mode-select" onchange="toggleGameMode()">
+                <option value="local" selected>🏠 Jogador Local (Offline / Mesmo Dispositivo)</option>
+                <option value="online">🌐 Multiplayer Online (Rede P2P)</option>
+            </select>
+        </div>
+        <div id="mode-status-text" class="status-badge">Modo Local Offline</div>
+    </div>
+
+    <!-- Barra de Conexão Multiplayer Online (Oculta por padrão no modo local) -->
+    <div class="network-bar" id="network-bar" style="display: none;">
         <div class="net-group">
-            <label>Seu Nome:</label>
+            <label>Seu Nome Online:</label>
             <input type="text" id="my-name-input" class="net-input" value="Jogador 1" style="width: 120px;">
-            <span id="connection-status" class="status-badge">Modo Local</span>
+            <span id="connection-status" class="status-badge">Aguardando Conexão</span>
         </div>
 
         <div class="net-group">
@@ -728,6 +782,7 @@
         ];
 
         // Estado do Jogo
+        let gameMode = "local"; // "local" ou "online"
         let totalTiles = 50;
         let numPlayers = 4;
         let playerNames = ["Jogador 1", "Jogador 2", "Jogador 3", "Jogador 4"];
@@ -739,12 +794,34 @@
         let timerInterval = null;
         let currentQuestion = null;
 
-        // Variaveis de Rede Multiplayer
+        // Variáveis de Rede Multiplayer (PeerJS)
         let peer = null;
-        let connections = []; // Guarda as conexões de Clientes se for Host
-        let hostConnection = null; // Guarda a conexão com o Host se for Cliente
+        let connections = [];
+        let hostConnection = null;
         let isHost = false;
-        let myPlayerIndex = 0; // 0 = Jogador 1 (Host), 1, 2, 3 = Clientes
+        let myPlayerIndex = 0;
+
+        function toggleGameMode() {
+            gameMode = document.getElementById('game-mode-select').value;
+            const netBar = document.getElementById('network-bar');
+            const statusText = document.getElementById('mode-status-text');
+            const numPlayersSelect = document.getElementById('num-players');
+
+            if (gameMode === "local") {
+                netBar.style.display = "none";
+                statusText.innerText = "Modo Local Offline";
+                numPlayersSelect.disabled = false;
+                if (peer) {
+                    peer.destroy();
+                    peer = null;
+                }
+                resetGame();
+            } else {
+                netBar.style.display = "flex";
+                statusText.innerText = "Modo Multiplayer Online";
+                resetGame();
+            }
+        }
 
         function shuffleArray(array) {
             let currentIndex = array.length, randomIndex;
@@ -759,6 +836,7 @@
         // --- SISTEMA MULTIPLAYER (PEERJS) ---
 
         function updateMyName() {
+            if (gameMode !== "online") return;
             const name = document.getElementById('my-name-input').value.trim() || `Jogador ${myPlayerIndex + 1}`;
             playerNames[myPlayerIndex] = name;
             renderPlayerInputs();
@@ -772,6 +850,7 @@
         document.getElementById('my-name-input').addEventListener('change', updateMyName);
 
         function createRoom() {
+            if (gameMode !== "online") return;
             const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
             peer = new Peer(`GESTOR-${roomCode}`);
 
@@ -792,7 +871,7 @@
                 }
 
                 connections.push(conn);
-                const clientIndex = connections.length; // 1, 2 ou 3
+                const clientIndex = connections.length;
 
                 conn.on('open', () => {
                     conn.send({ type: 'INIT_CLIENT', playerIndex: clientIndex });
@@ -814,6 +893,7 @@
         }
 
         function joinRoom() {
+            if (gameMode !== "online") return;
             const code = document.getElementById('join-room-input').value.trim().toUpperCase();
             if (!code) {
                 alert('Digite um código de sala válido.');
@@ -847,7 +927,7 @@
         }
 
         function broadcastGameState() {
-            if (!isHost) return;
+            if (gameMode !== "online" || !isHost) return;
             const state = {
                 type: 'STATE_UPDATE',
                 numPlayers,
@@ -910,16 +990,17 @@
             renderPlayerInputs();
             updatePawns();
 
-            // Bloqueia botão de rolar dado se não for o turno do jogador local
             const btnRoll = document.getElementById('btn-roll');
-            if (currentPlayer === myPlayerIndex && !playerFinished[myPlayerIndex]) {
-                btnRoll.disabled = false;
+            if (gameMode === "local") {
+                btnRoll.disabled = playerFinished[currentPlayer];
             } else {
-                btnRoll.disabled = true;
+                if (currentPlayer === myPlayerIndex && !playerFinished[myPlayerIndex]) {
+                    btnRoll.disabled = false;
+                } else {
+                    btnRoll.disabled = true;
+                }
             }
         }
-
-        // --- LÓGICA DO JOGO DA REDE & LOCAL ---
 
         function openStudyModal() {
             document.getElementById('study-modal').style.display = 'flex';
@@ -927,6 +1008,12 @@
 
         function closeStudyModal() {
             document.getElementById('study-modal').style.display = 'none';
+        }
+
+        function updatePlayerNameLocal(index, newName) {
+            playerNames[index] = newName.trim() || `Jogador ${index + 1}`;
+            updateTurnDisplay();
+            updatePawns();
         }
 
         function renderPlayerInputs() {
@@ -943,7 +1030,13 @@
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.value = playerNames[i] || `Jogador ${i + 1}`;
-                input.readOnly = true;
+                
+                if (gameMode === "local") {
+                    input.readOnly = false;
+                    input.onchange = (e) => updatePlayerNameLocal(i, e.target.value);
+                } else {
+                    input.readOnly = true;
+                }
 
                 group.appendChild(dot);
                 group.appendChild(input);
@@ -1044,8 +1137,9 @@
 
             renderPlayerInputs();
             initBoard();
+            updateTurnDisplay();
 
-            if (isHost) {
+            if (gameMode === "online" && isHost) {
                 broadcastGameState();
             }
         }
@@ -1068,23 +1162,30 @@
 
             currentDiceRoll = 0;
             
-            if (isHost) {
-                broadcastGameState();
+            if (gameMode === "online") {
+                if (isHost) {
+                    broadcastGameState();
+                } else {
+                    syncUI();
+                }
             } else {
                 syncUI();
             }
         }
 
         function rollDice() {
-            if (!isHost && hostConnection) {
+            if (gameMode === "online" && !isHost && hostConnection) {
                 hostConnection.send({ type: 'ROLL_DICE' });
                 return;
             }
 
             document.getElementById('btn-roll').disabled = true;
             currentDiceRoll = Math.floor(Math.random() * 6) + 1;
-            
-            broadcastGameState();
+            document.getElementById('dice-display').innerText = `Dado: 🎲 ${currentDiceRoll}`;
+
+            if (gameMode === "online" && isHost) {
+                broadcastGameState();
+            }
 
             setTimeout(() => {
                 triggerQuestion();
@@ -1125,7 +1226,7 @@
                 correctIndex: mappedOptions.findIndex(o => o.isCorrect)
             };
 
-            if (isHost) {
+            if (gameMode === "online" && isHost) {
                 connections.forEach(conn => conn.send({ type: 'SHOW_QUESTION', question: currentQuestion }));
             }
 
@@ -1155,8 +1256,7 @@
                 btn.classList.add('option-btn');
                 btn.innerText = `${String.fromCharCode(65 + idx)}) ${optText}`;
                 
-                // Desabilita botões se não for o turno do jogador
-                if (currentPlayer !== myPlayerIndex) {
+                if (gameMode === "online" && currentPlayer !== myPlayerIndex) {
                     btn.disabled = true;
                 } else {
                     btn.onclick = () => evaluateAnswer(idx);
@@ -1180,7 +1280,7 @@
 
                 if (timeRemaining <= 0) {
                     clearInterval(timerInterval);
-                    if (isHost) handleTimeOut();
+                    if (gameMode === "local" || isHost) handleTimeOut();
                 }
             }, 1000);
         }
@@ -1189,7 +1289,7 @@
             disableOptions();
             const msg = '❌ Tempo esgotado! Você permanece na mesma casa.';
             
-            if (isHost) {
+            if (gameMode === "online" && isHost) {
                 connections.forEach(conn => conn.send({ type: 'ANSWER_RESULT', isCorrect: false, msg: msg }));
             }
 
@@ -1210,7 +1310,7 @@
         }
 
         function evaluateAnswer(selectedIdx) {
-            if (!isHost && hostConnection) {
+            if (gameMode === "online" && !isHost && hostConnection) {
                 hostConnection.send({ type: 'ANSWER_QUESTION', selectedIdx: selectedIdx });
                 return;
             }
@@ -1259,7 +1359,7 @@
             feedback.innerText = msg;
             showExplanation();
 
-            if (isHost) {
+            if (gameMode === "online" && isHost) {
                 connections.forEach(conn => conn.send({ type: 'ANSWER_RESULT', isCorrect, msg }));
             }
 
@@ -1275,14 +1375,14 @@
 
         function closeModalAndNext() {
             document.getElementById('question-modal').style.display = 'none';
-            if (isHost) {
+            if (gameMode === "online" && isHost) {
                 connections.forEach(conn => conn.send({ type: 'CLOSE_QUESTION' }));
             }
             advanceToNextActivePlayer();
         }
 
         function showWinModal() {
-            if (isHost) {
+            if (gameMode === "online" && isHost) {
                 connections.forEach(conn => conn.send({ type: 'SHOW_WIN' }));
             }
             showWinModalUI();
@@ -1310,6 +1410,7 @@
             document.getElementById('win-modal').style.display = 'flex';
         }
 
+        // Inicializar no modo local por padrão ao carregar
         resetGame();
     </script>
 </body>
