@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Tabuleiro - Gestão Empresarial (Multiplayer Online)</title>
+    <!-- PeerJS Library para Conexão P2P via WebRTC -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --p1-color: #ef4444; /* Vermelho */
+            --p2-color: #3b82f6; /* Azul */
+            --p3-color: #10b981; /* Verde */
+            --p4-color: #f59e0b; /* Amarelo */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: var(--accent-color);
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .network-bar {
+            background-color: #1e293b;
+            border: 2px solid var(--accent-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .net-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .net-input {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .controls-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .players-inputs {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            border-top: 1px solid #334155;
+            padding-top: 12px;
+        }
+
+        .player-input-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #0f172a;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+        }
+
+        .player-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot-p1 { background-color: var(--p1-color); }
+        .dot-p2 { background-color: var(--p2-color); }
+        .dot-p3 { background-color: var(--p3-color); }
+        .dot-p4 { background-color: var(--p4-color); }
+
+        select, button {
+            background-color: #0f172a;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button.btn-roll {
+            background-color: var(--accent-color);
+            color: #0f172a;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        button.btn-roll:hover:not(:disabled) {
+            background-color: #0284c7;
+            color: #fff;
+        }
+
+        button.btn-study {
+            background-color: #10b981;
+            color: #0f172a;
+            border-color: #10b981;
+        }
+
+        button.btn-study:hover {
+            background-color: #059669;
+            color: #fff;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .dice-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #f59e0b;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .turn-display {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .board-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+            width: 100%;
+            max-width: 1100px;
+            margin-bottom: 20px;
+            background-color: #334155;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .tile {
+            background-color: var(--card-bg);
+            border: 2px solid #475569;
+            border-radius: 6px;
+            height: 75px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px;
+            position: relative;
+        }
+
+        .tile-number {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #94a3b8;
+            align-self: flex-start;
+        }
+
+        .tile-tag {
+            font-size: 0.6rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .tile-start { border-color: #10b981; background-color: rgba(16, 185, 129, 0.15); }
+        .tile-end { border-color: #f59e0b; background-color: rgba(245, 158, 11, 0.15); }
+        
+        .tile-bonus { 
+            border-color: #10b981; 
+            background-color: rgba(16, 185, 129, 0.25); 
+        }
+        .tile-bonus .tile-tag { color: #10b981; }
+
+        .tile-penalty { 
+            border-color: #ef4444; 
+            background-color: rgba(239, 68, 68, 0.25); 
+        }
+        .tile-penalty .tile-tag { color: #ef4444; }
+
+        .pawns-container {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pawn {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1.5px solid #ffffff;
+            box-shadow: 0 0 4px rgba(0,0,0,0.6);
+            transition: all 0.3s ease;
+        }
+
+        .p1 { background-color: var(--p1-color); }
+        .p2 { background-color: var(--p2-color); }
+        .p3 { background-color: var(--p3-color); }
+        .p4 { background-color: var(--p4-color); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 700px;
+            width: 90%;
+            border: 2px solid var(--accent-color);
+            position: relative;
+        }
+
+        .study-modal-content {
+            max-width: 900px;
+            max-height: 85vh;
+            overflow-y: auto;
+            text-align: left;
+            line-height: 1.6;
+            padding-right: 20px;
+        }
+
+        .study-modal-content h2 {
+            color: var(--accent-color);
+            border-bottom: 2px solid #334155;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .study-modal-content h3 {
+            color: #10b981;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .study-modal-content p, .study-modal-content ul {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+        }
+
+        .study-modal-content ul {
+            padding-left: 20px;
+        }
+
+        .study-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .btn-close-study {
+            position: sticky;
+            top: 0;
+            float: right;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
+
+        .difficulty-badge {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+
+        .diff-fácil { background-color: #10b981; color: #000; }
+        .diff-médio { background-color: #f59e0b; color: #000; }
+        .diff-difícil { background-color: #ef4444; color: #fff; }
+
+        .timer {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ef4444;
+            background-color: #0f172a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid #ef4444;
+        }
+
+        .question-text {
+            font-size: 1.05rem;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #0f172a;
+            color: var(--text-color);
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: left;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+            line-height: 1.3;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--accent-color);
+            background-color: #1e293b;
+        }
+
+        .explanation-box {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #0f172a;
+            border-left: 4px solid var(--accent-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .feedback-msg {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.05rem;
+            text-align: center;
+        }
+
+        .win-modal-content {
+            text-align: center;
+        }
+
+        .win-modal-content h2 {
+            color: #10b981;
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        .leaderboard {
+            margin: 20px 0;
+            text-align: left;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .leaderboard-item {
+            padding: 6px 0;
+            border-bottom: 1px solid #1e293b;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .status-badge {
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background-color: #334155;
+            color: #38bdf8;
+            font-weight: bold;
+        }
+
+        @media (max-width: 900px) {
+            .board-container { grid-template-columns: repeat(5, 1fr); }
+            .tile { height: 70px; }
+        }
+
+        @media (max-width: 500px) {
+            .board-container { grid-template-columns: repeat(4, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Jogo de Tabuleiro: Gestão Empresarial</h1>
+        <p>Modo Multiplayer Online via Rede (Peer-to-Peer) • Até 4 Jogadores</p>
+    </header>
+
+    <!-- Barra de Conexão Multiplayer -->
+    <div class="network-bar">
+        <div class="net-group">
+            <label>Seu Nome:</label>
+            <input type="text" id="my-name-input" class="net-input" value="Jogador 1" style="width: 120px;">
+            <span id="connection-status" class="status-badge">Modo Local</span>
+        </div>
+
+        <div class="net-group">
+            <button onclick="createRoom()">🌐 Criar Sala (Host)</button>
+            <span id="room-code-display" style="font-weight: bold; color: #f59e0b; font-size: 0.95rem;"></span>
+        </div>
+
+        <div class="net-group">
+            <input type="text" id="join-room-input" class="net-input" placeholder="Código da Sala" style="width: 120px; text-transform: uppercase;">
+            <button onclick="joinRoom()">🔗 Entrar na Sala</button>
+        </div>
+    </div>
+
+    <div class="controls-bar">
+        <div class="controls-row">
+            <div class="control-group">
+                <label for="num-players">Qtd. Jogadores:</label>
+                <select id="num-players" onchange="resetGame()">
+                    <option value="2">2 Jogadores</option>
+                    <option value="3">3 Jogadores</option>
+                    <option value="4" selected>4 Jogadores</option>
+                </select>
+            </div>
+
+            <button class="btn-study" onclick="openStudyModal()">📖 Material de Estudos</button>
+            <div class="turn-display" id="turn-display">Vez de: Jogador 1</div>
+            <button class="btn-roll" id="btn-roll" onclick="rollDice()">🎲 Rolar Dado</button>
+            <div class="dice-display" id="dice-display">Dado: -</div>
+        </div>
+
+        <div class="players-inputs" id="players-inputs-container"></div>
+    </div>
+
+    <div class="board-container" id="board"></div>
+
+    <!-- Modal do Material de Estudos -->
+    <div class="modal" id="study-modal">
+        <div class="modal-content study-modal-content">
+            <button class="btn-close-study" onclick="closeStudyModal()">✕ Fechar</button>
+            <h2>📚 Guia Prático de Estudos: Gestão & Produção</h2>
+            
+            <div class="study-card">
+                <h3>1. Classificação de Empresas e Setores Econômicos</h3>
+                <p>As organizações são classificadas de acordo com sua atividade econômica, porte e forma jurídica:</p>
+                <ul>
+                    <li><strong>Setor Primário:</strong> Extração e obtenção de matérias-primas diretamente da natureza (agricultura, mineração, pecuária, pesca).</li>
+                    <li><strong>Setor Secundário:</strong> Indústria de transformação que converte matéria-prima em produtos acabados ou semiacabados.</li>
+                    <li><strong>Setor Terciário:</strong> Prestação de serviços e comércio em geral (bancos, escolas, lojas, transportes).</li>
+                    <li><strong>Porte Empresarial:</strong> Geralmente medido pelo faturamento bruto anual ou quantidade de colaboradores (Microempresa, EPP, Média e Grande).</li>
+                    <li><strong>Sociedade Limitada (Ltda.):</strong> Tipo jurídico onde a responsabilidade financeira de cada sócio é limitada ao valor das suas cotas no capital social.</li>
+                </ul>
+            </div>
+
+            <div class="study-card">
+                <h3>2. Evolução Histórica e Teorias da Administração</h3>
+                <p>Principais marcos da evolução industrial e modelos de gestão:</p>
+                <ul>
+                    <li><strong>1ª Revolução Industrial:</strong> Introdução do carvão mineral e da máquina a vapor, marcando a transição do trabalho artesanal para o fabril.</li>
+                    <li><strong>Administração Científica (Taylor):</strong> Foco no nível operacional ("chão de fábrica"), buscando eficiência máxima através do estudo de tempos e movimentos e da eliminação de desperdícios.</li>
+                    <li><strong>Teoria Contingencial:</strong> Defende que não existe uma única forma "correta" de administrar; as decisões e estruturas dependem das circunstâncias (ambiente externo e tecnologia disponível).</li>
+                </ul>
+            </div>
+
+            <div class="study-card">
+                <h3>3. Estruturas Organizacionais e Departamentalização</h3>
+                <p>A estrutura organiza as tarefas e define as relações de autoridade na empresa:</p>
+                <ul>
+                    <li><strong>Organograma:</strong> Gráfico que representa visualmente os cargos, a divisão do trabalho e a hierarquia interna.</li>
+                    <li><strong>Departamentalização Funcional:</strong> Agrupa colaboradores de acordo com suas especialidades ou funções (ex: Marketing, Finanças, RH, Produção).</li>
+                    <li><strong>Departamentalização Matricial:</strong> Combina a estrutura funcional com a estrutura de projetos. <em>Ponto de atenção:</em> Pode gerar conflitos pela duplicidade de comando (dois chefes).</li>
+                </ul>
+            </div>
+
+            <div class="study-card">
+                <h3>4. Sistemas de Produção e Fluxos de Trabalho</h3>
+                <p>Formas de organizar o processo produtivo para atender às demandas de mercado:</p>
+                <ul>
+                    <li><strong>Produção por Projeto (Unitária):</strong> Produtos exclusivos de grande porte e longa duração (ex: navios, pontes, edifícios).</li>
+                    <li><strong>Sistema Puxado (Pull / Just-in-Time):</strong> A fabricação é iniciada apenas quando o cliente faz o pedido real, reduzindo estoques ao mínimo.</li>
+                    <li><strong>Sistema Empurrado (Push):</strong> Produção baseada em previsões de vendas, mantendo alto volume de produtos estocados.</li>
+                </ul>
+            </div>
+
+            <div class="study-card">
+                <h3>5. Métricas, Indicadores e Qualidade no PCP</h3>
+                <p>Conceitos fundamentais para análise e otimização da produção:</p>
+                <ul>
+                    <li><strong>Lead Time:</strong> Tempo total necessário para que um pedido percorra todas as etapas, desde a sua emissão até a entrega final ao cliente.</li>
+                    <li><strong>Gargalo de Produção:</strong> Etapa com a menor capacidade de processamento que limita o ritmo e a capacidade máxima de toda a fábrica.</li>
+                    <li><strong>OEE (Overall Equipment Effectiveness):</strong> Indicador de eficiência que multiplica três fatores: <em>Disponibilidade × Desempenho × Qualidade</em>.</li>
+                    <li><strong>Poka-Yoke:</strong> Dispositivo "à prova de erros" projetado para evitar falhas humanas nas operações manuais ou mecânicas.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Perguntas -->
+    <div class="modal" id="question-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <span id="question-topic" style="color: var(--accent-color); font-weight: bold;">Tema</span>
+                    <span id="question-difficulty" class="difficulty-badge">Fácil</span>
+                </div>
+                <div class="timer" id="timer">⏱️ 45s</div>
+            </div>
+            <div class="question-text" id="question-text">Pergunta...</div>
+            <div class="options-container" id="options-container"></div>
+            <div class="explanation-box" id="explanation-box"></div>
+            <div class="feedback-msg" id="feedback-msg"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Fim de Jogo -->
+    <div class="modal" id="win-modal">
+        <div class="modal-content win-modal-content">
+            <h2>🏆 Fim da Partida! 🏆</h2>
+            <p style="font-size: 1.1rem; margin-bottom: 10px;">Todos os jogadores concluíram o percurso!</p>
+            <div class="leaderboard" id="leaderboard"></div>
+            <button class="btn-roll" onclick="resetGame()">Nova Partida</button>
+        </div>
+    </div>
+
+    <script>
+        const bonusTiles = [7, 17, 27, 37, 44];
+        const penaltyTiles = [12, 22, 32, 42, 48];
+
+        const BONUS_VALUE = 2;
+        const PENALTY_VALUE = 3;
+
+        const questionsDatabase = [
+            // --- FÁCIL (Casas 1 - 16) ---
+            {
+                difficulty: "Fácil",
+                topic: "Setores da Economia",
+                question: "Uma empresa que atua na extração de minério de ferro ou na produção agrícola pertence a qual setor econômico?",
+                options: ["Setor Primário.", "Setor Secundário.", "Setor Terciário.", "Setor Quaternário."],
+                answer: 0,
+                explanation: "O Setor Primário engloba atividades que retiram ou produzem bens a partir da natureza (agricultura, mineração, pesca)."
+            },
+            {
+                difficulty: "Fácil",
+                topic: "Classificação por Porte",
+                question: "Qual critério é amplamente adotado no Brasil por órgãos como Sebrae e IBGE para classificar o porte de uma empresa?",
+                options: ["Número de funcionários e/ou faturamento bruto anual.", "Quantidade de máquinas importadas instaladas.", "Número de patentes científicas registradas.", "Idade média dos sócios fundadores."],
+                answer: 0,
+                explanation: "O porte é medido oficialmente pelo número de pessoas ocupadas ou pela receita bruta anual."
+            },
+            {
+                difficulty: "Fácil",
+                topic: "Evolução Industrial",
+                question: "Qual foi a principal fonte de energia e inovação técnica responsável pela Primeira Revolução Industrial no século XVIII?",
+                options: ["A máquina a vapor e o uso do carvão.", "A energia elétrica e as linhas de montagem.", "Os microprocessadores e a internet.", "A inteligência artificial e a robótica."],
+                answer: 0,
+                explanation: "A Primeira Revolução Industrial substituiu a força muscular e artesanal pela força mecânica a vapor."
+            },
+            {
+                difficulty: "Fácil",
+                topic: "Estrutura Organizacional",
+                question: "Qual ferramenta visual é utilizada para demonstrar formalmente os cargos, divisões e a hierarquia interna de uma empresa?",
+                options: ["Organograma.", "Fluxograma de processo.", "Diagrama de Ishikawa.", "Matriz SWOT."],
+                answer: 0,
+                explanation: "O organograma desenha a estrutura hierárquica e as relações funcionais entre setores de uma empresa."
+            },
+            {
+                difficulty: "Fácil",
+                topic: "Sistemas de Produção",
+                question: "A fabricação de um navio petroleiro, de uma ponte ou de um edifício é classificada sob qual sistema produtivo?",
+                options: ["Produção por Projeto (ou Unitária).", "Produção em Massa contínua.", "Produção por Lotes repetitivos.", "Produção em Linha automatizada."],
+                answer: 0,
+                explanation: "Produtos únicos, de grande porte e longo ciclo de fabricação seguem o sistema por projeto (layout posicional)."
+            },
+
+            // --- MÉDIO (Casas 17 - 33) ---
+            {
+                difficulty: "Médio",
+                topic: "Departamentalização",
+                question: "A divisão da estrutura de uma empresa nos setores de 'Marketing', 'Finanças', 'Recursos Humanos' e 'Produção' caracteriza qual tipo de departamentalização?",
+                options: ["Departamentalização Funcional.", "Departamentalização Geográfica.", "Departamentalização por Projetos.", "Departamentalização por Clientes."],
+                answer: 0,
+                explanation: "A departamentalização funcional agrupa pessoas e tarefas especializadas sob a mesma área de conhecimento/função."
+            },
+            {
+                difficulty: "Médio",
+                topic: "Teorias da Administração",
+                question: "Qual o foco central da Teoria da Administração Científica, desenvolvida por Frederick Taylor no início do século XX?",
+                options: ["Estudo dos tempos e movimentos no nível operacional para eliminar desperdícios.", "Análise do comportamento e motivação social dos grupos de trabalho.", "Estruturação de regras e cargos burocráticos impessoais.", "Adoção do planejamento estratégico descentralizado."],
+                answer: 0,
+                explanation: "Taylor focou no chão de fábrica ('bottom-up'), padronizando os métodos operacionais para otimizar o tempo e a eficiência."
+            },
+            {
+                difficulty: "Médio",
+                topic: "Sistemas Puxados vs Empurrados",
+                question: "No contexto da gestão da produção, o que caracteriza essencialmente um sistema de produção Puxado (Pull)?",
+                options: ["A fabricação é iniciada somente após a solicitação ou consumo do cliente final.", "A produção é realizada com base em projeções de vendas, gerando grandes estoques.", "Os insumos são comprados em lotes gigantescos para baratear o custo unitário.", "O fluxo produtivo depende exclusivamente de processos manuais sem automação."],
+                answer: 0,
+                explanation: "No sistema Puxado (JIT/Lean), a demanda real do cliente autoriza o início e a movimentação da produção."
+            },
+            {
+                difficulty: "Médio",
+                topic: "Classificação Jurídica de Empresas",
+                question: "O que caracteriza uma Sociedade de Responsabilidade Limitada (Ltda.)?",
+                options: ["A responsabilidade financeira de cada sócio é restrita ao valor de suas cotas no capital social.", "O patrimônio pessoal dos sócios responde sem limites pelas dívidas comerciais.", "O capital deve ser composto obrigatoriamente por ações negociadas na bolsa de valores.", "Pertence obrigatoriamente ao governo estadual ou federal."],
+                answer: 0,
+                explanation: "Na Sociedade Ltda., o patrimônio pessoal dos sócios é resguardado até o limite do capital social subscrito."
+            },
+            {
+                difficulty: "Médio",
+                topic: "Gestão do Fluxo e Métricas",
+                question: "O que representa o indicador 'Lead Time' em uma linha de produção?",
+                options: ["O tempo total decorrido desde a entrada do pedido até a entrega final ao cliente.", "A velocidade de rotação dos motores de uma máquina.", "O intervalo reservado para o descanso dos operários no turno.", "A quantidade de peças defeituosas produzidas por hora."],
+                answer: 0,
+                explanation: "Lead Time mede o tempo de atravessamento completo do produto por todas as etapas da cadeia de valor."
+            },
+
+            // --- DIFÍCIL (Casas 34 - 50) ---
+            {
+                difficulty: "Difícil",
+                topic: "Departamentalização Matricial",
+                question: "Uma empresa que combina a estrutura Funcional com a estrutura por Projetos adota a matriz. Qual é a sua principal fragilidade gerencial?",
+                options: ["A duplicidade de comando, gerando conflitos de autoridade e ambiguidade para os colaboradores.", "A absoluta falta de especialização técnica dos profissionais das equipes.", "A incapacidade de trabalhar com produtos complexos e inovadores.", "A impossibilidade de medir custos em projetos específicos."],
+                answer: 0,
+                explanation: "Na estrutura matricial, os colaboradores respondem a dois chefes simultaneamente (gerente funcional e de projeto), o que pode causar disputas de poder."
+            },
+            {
+                difficulty: "Difícil",
+                topic: "Teoria Contingencial",
+                question: "O que defende o princípio fundamental da Teoria Contingencial da Administração?",
+                options: ["Não há um modelo administrativo único e perfeito; a estrutura da empresa depende das variáveis ambientais e tecnológicas.", "A organização deve priorizar a burocracia rígida sobre qualquer mudança de mercado.", "O comportamento humano é a única variável que determina o sucesso comercial da firma.", "A empresa deve isolar seus setores para evitar interferência das oscilações de mercado."],
+                answer: 0,
+                explanation: "A abordagem contingencial afirma que 'nada é absoluto': as escolhas administrativas dependem das condições do ambiente externo e das tecnologias empregadas."
+            },
+            {
+                difficulty: "Difícil",
+                topic: "Eficiência Global de Equipamento (OEE)",
+                question: "O indicador OEE (Overall Equipment Effectiveness) avalia a produtividade do maquinário multiplicando três fatores essenciais. Quais são eles?",
+                options: ["Disponibilidade, Desempenho (Performance) e Qualidade.", "Custo do Insumo, Velocidade e Capacidade do Galpão.", "Manutenção Preventiva, Depreciação e Consumo Elétrico.", "Horas Trabalhadas, Salário do Operador e Margem de Lucro."],
+                answer: 0,
+                explanation: "O OEE mensura a eficiência operacional agregando o tempo em que o equipamento ficou disponível, seu ritmo de produção e a porcentagem de itens aprovados na qualidade."
+            },
+            {
+                difficulty: "Difícil",
+                topic: "Conceito de Gargalo no PCP",
+                question: "Em um sistema de produção contínuo ou em lotes, como se define tecnicamente o 'Gargalo' do processo?",
+                options: ["A etapa da produção que possui a menor capacidade e que determina a taxa de saída global do sistema.", "O setor responsável pelo descarte e reciclagem do refugo gerado.", "O equipamento mais caro e sofisticado instalado na fábrica.", "O almoxarifado reservado exclusivamente ao estoque de segurança."],
+                answer: 0,
+                explanation: "A capacidade total de uma fábrica é limitada pelo seu gargalo (a restrição que apresenta o menor ritmo de processamento)."
+            },
+            {
+                difficulty: "Difícil",
+                topic: "Dispositivos de Qualidade (Poka-Yoke)",
+                question: "Qual é o objetivo conceitual e prático da aplicação do mecanismo Poka-Yoke no chão de fábrica?",
+                options: ["Prevenir a ocorrência de erros humanos atalhando processos com dispositivos físicos à prova de falhas.", "Punir financeiramente os operários que cometem pequenos lapsos na montagem.", "Aumentar o volume do estoque intermediário para disfarçar falhas operacionais.", "Substituir auditorias fiscais por conferências manuais em lote."],
+                answer: 0,
+                explanation: "Poka-Yoke é um mecanismo projetado para evitar que o erro aconteça ou avance (ex: cabos com conectores que só encaixam em uma posição)."
+            }
+        ];
+
+        // Estado do Jogo
+        let totalTiles = 50;
+        let numPlayers = 4;
+        let playerNames = ["Jogador 1", "Jogador 2", "Jogador 3", "Jogador 4"];
+        let currentPlayer = 0;
+        let playerPositions = [1, 1, 1, 1];
+        let playerFinished = [false, false, false, false];
+        let finishRank = [];
+        let currentDiceRoll = 0;
+        let timerInterval = null;
+        let currentQuestion = null;
+
+        // Variaveis de Rede Multiplayer
+        let peer = null;
+        let connections = []; // Guarda as conexões de Clientes se for Host
+        let hostConnection = null; // Guarda a conexão com o Host se for Cliente
+        let isHost = false;
+        let myPlayerIndex = 0; // 0 = Jogador 1 (Host), 1, 2, 3 = Clientes
+
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // --- SISTEMA MULTIPLAYER (PEERJS) ---
+
+        function updateMyName() {
+            const name = document.getElementById('my-name-input').value.trim() || `Jogador ${myPlayerIndex + 1}`;
+            playerNames[myPlayerIndex] = name;
+            renderPlayerInputs();
+            if (isHost) {
+                broadcastGameState();
+            } else if (hostConnection) {
+                hostConnection.send({ type: 'UPDATE_NAME', index: myPlayerIndex, name: name });
+            }
+        }
+
+        document.getElementById('my-name-input').addEventListener('change', updateMyName);
+
+        function createRoom() {
+            const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+            peer = new Peer(`GESTOR-${roomCode}`);
+
+            peer.on('open', (id) => {
+                isHost = true;
+                myPlayerIndex = 0;
+                document.getElementById('connection-status').innerText = 'Servidor (Host)';
+                document.getElementById('room-code-display').innerText = `Código da Sala: ${roomCode}`;
+                updateMyName();
+                alert(`Sala criada! Compartilhe o código: ${roomCode}`);
+            });
+
+            peer.on('connection', (conn) => {
+                if (connections.length >= 3) {
+                    conn.send({ type: 'ERROR', message: 'Sala cheia (máximo 4 jogadores).' });
+                    conn.close();
+                    return;
+                }
+
+                connections.push(conn);
+                const clientIndex = connections.length; // 1, 2 ou 3
+
+                conn.on('open', () => {
+                    conn.send({ type: 'INIT_CLIENT', playerIndex: clientIndex });
+                    broadcastGameState();
+                });
+
+                conn.on('data', (data) => {
+                    handleHostData(data, clientIndex);
+                });
+
+                conn.on('close', () => {
+                    connections = connections.filter(c => c !== conn);
+                });
+            });
+
+            peer.on('error', (err) => {
+                alert('Erro na conexão da rede: ' + err.type);
+            });
+        }
+
+        function joinRoom() {
+            const code = document.getElementById('join-room-input').value.trim().toUpperCase();
+            if (!code) {
+                alert('Digite um código de sala válido.');
+                return;
+            }
+
+            peer = new Peer();
+
+            peer.on('open', () => {
+                hostConnection = peer.connect(`GESTOR-${code}`);
+
+                hostConnection.on('open', () => {
+                    isHost = false;
+                    document.getElementById('connection-status').innerText = 'Cliente Conectado';
+                    document.getElementById('num-players').disabled = true;
+                    updateMyName();
+                });
+
+                hostConnection.on('data', (data) => {
+                    handleClientData(data);
+                });
+
+                hostConnection.on('close', () => {
+                    alert('Conexão com o Host foi encerrada.');
+                });
+            });
+
+            peer.on('error', (err) => {
+                alert('Não foi possível conectar à sala. Verifique o código.');
+            });
+        }
+
+        function broadcastGameState() {
+            if (!isHost) return;
+            const state = {
+                type: 'STATE_UPDATE',
+                numPlayers,
+                playerNames,
+                currentPlayer,
+                playerPositions,
+                playerFinished,
+                finishRank,
+                currentDiceRoll
+            };
+
+            connections.forEach(conn => conn.send(state));
+            syncUI();
+        }
+
+        function handleHostData(data, clientIndex) {
+            if (data.type === 'UPDATE_NAME') {
+                playerNames[data.index] = data.name;
+                broadcastGameState();
+            } else if (data.type === 'ROLL_DICE' && currentPlayer === clientIndex) {
+                rollDice();
+            } else if (data.type === 'ANSWER_QUESTION' && currentPlayer === clientIndex) {
+                evaluateAnswer(data.selectedIdx);
+            }
+        }
+
+        function handleClientData(data) {
+            if (data.type === 'INIT_CLIENT') {
+                myPlayerIndex = data.playerIndex;
+                updateMyName();
+            } else if (data.type === 'STATE_UPDATE') {
+                numPlayers = data.numPlayers;
+                playerNames = data.playerNames;
+                currentPlayer = data.currentPlayer;
+                playerPositions = data.playerPositions;
+                playerFinished = data.playerFinished;
+                finishRank = data.finishRank;
+                currentDiceRoll = data.currentDiceRoll;
+                syncUI();
+            } else if (data.type === 'SHOW_QUESTION') {
+                currentQuestion = data.question;
+                renderQuestionModal(data.question);
+            } else if (data.type === 'ANSWER_RESULT') {
+                showExplanation();
+                disableOptions();
+                const feedback = document.getElementById('feedback-msg');
+                feedback.innerText = data.msg;
+                feedback.style.color = data.isCorrect ? '#10b981' : '#ef4444';
+            } else if (data.type === 'CLOSE_QUESTION') {
+                document.getElementById('question-modal').style.display = 'none';
+            } else if (data.type === 'SHOW_WIN') {
+                showWinModalUI();
+            }
+        }
+
+        function syncUI() {
+            document.getElementById('num-players').value = numPlayers;
+            document.getElementById('dice-display').innerText = `Dado: ${currentDiceRoll ? '🎲 ' + currentDiceRoll : '-'}`;
+            updateTurnDisplay();
+            renderPlayerInputs();
+            updatePawns();
+
+            // Bloqueia botão de rolar dado se não for o turno do jogador local
+            const btnRoll = document.getElementById('btn-roll');
+            if (currentPlayer === myPlayerIndex && !playerFinished[myPlayerIndex]) {
+                btnRoll.disabled = false;
+            } else {
+                btnRoll.disabled = true;
+            }
+        }
+
+        // --- LÓGICA DO JOGO DA REDE & LOCAL ---
+
+        function openStudyModal() {
+            document.getElementById('study-modal').style.display = 'flex';
+        }
+
+        function closeStudyModal() {
+            document.getElementById('study-modal').style.display = 'none';
+        }
+
+        function renderPlayerInputs() {
+            const container = document.getElementById('players-inputs-container');
+            container.innerHTML = '';
+
+            for (let i = 0; i < numPlayers; i++) {
+                const group = document.createElement('div');
+                group.classList.add('player-input-group');
+
+                const dot = document.createElement('div');
+                dot.classList.add('player-color-dot', `dot-p${i + 1}`);
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = playerNames[i] || `Jogador ${i + 1}`;
+                input.readOnly = true;
+
+                group.appendChild(dot);
+                group.appendChild(input);
+                container.appendChild(group);
+            }
+        }
+
+        function getPlayerName(index) {
+            return playerNames[index] || `Jogador ${index + 1}`;
+        }
+
+        function getActivePlayersCount() {
+            return playerFinished.filter(f => !f).length;
+        }
+
+        function updateTurnDisplay() {
+            if (getActivePlayersCount() <= 1 && finishRank.length >= numPlayers - 1) {
+                document.getElementById('turn-display').innerText = 'Partida Encerrada';
+                return;
+            }
+            document.getElementById('turn-display').innerText = `Vez de: ${getPlayerName(currentPlayer)}`;
+        }
+
+        function initBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+
+            for (let i = 1; i <= totalTiles; i++) {
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                
+                let tagText = '';
+
+                if (i === 1) {
+                    tile.classList.add('tile-start');
+                    tagText = 'Início';
+                } else if (i === totalTiles) {
+                    tile.classList.add('tile-end');
+                    tagText = 'Chegada';
+                } else if (bonusTiles.includes(i)) {
+                    tile.classList.add('tile-bonus');
+                    tagText = `+${BONUS_VALUE} Bônus`;
+                } else if (penaltyTiles.includes(i)) {
+                    tile.classList.add('tile-penalty');
+                    tagText = `-${PENALTY_VALUE} Ônus`;
+                }
+
+                tile.innerHTML = `
+                    <span class="tile-number">${i}</span>
+                    <span class="tile-tag">${tagText}</span>
+                    <div class="pawns-container" id="tile-${i}"></div>
+                `;
+                board.appendChild(tile);
+            }
+            updatePawns();
+        }
+
+        function updatePawns() {
+            for (let i = 1; i <= totalTiles; i++) {
+                const el = document.getElementById(`tile-${i}`);
+                if (el) el.innerHTML = '';
+            }
+
+            for (let p = 0; p < numPlayers; p++) {
+                const pos = playerPositions[p];
+                const pawn = document.createElement('div');
+                pawn.classList.add('pawn', `p${p + 1}`);
+                pawn.title = getPlayerName(p);
+                
+                if (playerFinished[p]) {
+                    pawn.style.opacity = "0.5";
+                }
+
+                const tileContainer = document.getElementById(`tile-${pos}`);
+                if (tileContainer) {
+                    tileContainer.appendChild(pawn);
+                }
+            }
+        }
+
+        function resetGame() {
+            numPlayers = parseInt(document.getElementById('num-players').value, 10);
+            currentPlayer = 0;
+            playerPositions = [];
+            playerFinished = [];
+            finishRank = [];
+
+            for (let i = 0; i < numPlayers; i++) {
+                playerPositions.push(1);
+                playerFinished.push(false);
+            }
+
+            currentDiceRoll = 0;
+
+            document.getElementById('dice-display').innerText = 'Dado: -';
+            document.getElementById('btn-roll').disabled = false;
+            document.getElementById('win-modal').style.display = 'none';
+
+            renderPlayerInputs();
+            initBoard();
+
+            if (isHost) {
+                broadcastGameState();
+            }
+        }
+
+        function advanceToNextActivePlayer() {
+            if (getActivePlayersCount() <= 1) {
+                for (let i = 0; i < numPlayers; i++) {
+                    if (!playerFinished[i]) {
+                        playerFinished[i] = true;
+                        finishRank.push(i);
+                    }
+                }
+                showWinModal();
+                return;
+            }
+
+            do {
+                currentPlayer = (currentPlayer + 1) % numPlayers;
+            } while (playerFinished[currentPlayer]);
+
+            currentDiceRoll = 0;
+            
+            if (isHost) {
+                broadcastGameState();
+            } else {
+                syncUI();
+            }
+        }
+
+        function rollDice() {
+            if (!isHost && hostConnection) {
+                hostConnection.send({ type: 'ROLL_DICE' });
+                return;
+            }
+
+            document.getElementById('btn-roll').disabled = true;
+            currentDiceRoll = Math.floor(Math.random() * 6) + 1;
+            
+            broadcastGameState();
+
+            setTimeout(() => {
+                triggerQuestion();
+            }, 800);
+        }
+
+        function triggerQuestion() {
+            const currentPos = playerPositions[currentPlayer];
+            let targetDifficulty = "Fácil";
+
+            if (currentPos >= 17 && currentPos <= 33) {
+                targetDifficulty = "Médio";
+            } else if (currentPos >= 34) {
+                targetDifficulty = "Difícil";
+            }
+
+            let filteredQuestions = questionsDatabase.filter(q => q.difficulty === targetDifficulty);
+            if (filteredQuestions.length === 0) {
+                filteredQuestions = questionsDatabase;
+            }
+
+            const rawQuestion = filteredQuestions[Math.floor(Math.random() * filteredQuestions.length)];
+            const correctAnswerText = rawQuestion.options[rawQuestion.answer];
+
+            let mappedOptions = rawQuestion.options.map(opt => ({
+                text: opt,
+                isCorrect: opt === correctAnswerText
+            }));
+
+            mappedOptions = shuffleArray(mappedOptions);
+
+            currentQuestion = {
+                difficulty: rawQuestion.difficulty,
+                topic: rawQuestion.topic,
+                question: rawQuestion.question,
+                explanation: rawQuestion.explanation,
+                options: mappedOptions.map(o => o.text),
+                correctIndex: mappedOptions.findIndex(o => o.isCorrect)
+            };
+
+            if (isHost) {
+                connections.forEach(conn => conn.send({ type: 'SHOW_QUESTION', question: currentQuestion }));
+            }
+
+            renderQuestionModal(currentQuestion);
+            startTimer();
+        }
+
+        function renderQuestionModal(q) {
+            document.getElementById('question-topic').innerText = `Tema: ${q.topic}`;
+            
+            const diffEl = document.getElementById('question-difficulty');
+            diffEl.innerText = q.difficulty;
+            diffEl.className = `difficulty-badge diff-${q.difficulty.toLowerCase()}`;
+
+            document.getElementById('question-text').innerText = q.question;
+            document.getElementById('feedback-msg').innerText = '';
+            
+            const expBox = document.getElementById('explanation-box');
+            expBox.style.display = 'none';
+            expBox.innerText = '';
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.classList.add('option-btn');
+                btn.innerText = `${String.fromCharCode(65 + idx)}) ${optText}`;
+                
+                // Desabilita botões se não for o turno do jogador
+                if (currentPlayer !== myPlayerIndex) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => evaluateAnswer(idx);
+                }
+
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('question-modal').style.display = 'flex';
+        }
+
+        function startTimer() {
+            let timeRemaining = 45;
+            const timerEl = document.getElementById('timer');
+            timerEl.innerText = `⏱️ ${timeRemaining}s`;
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                timerEl.innerText = `⏱️ ${timeRemaining}s`;
+
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    if (isHost) handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function handleTimeOut() {
+            disableOptions();
+            const msg = '❌ Tempo esgotado! Você permanece na mesma casa.';
+            
+            if (isHost) {
+                connections.forEach(conn => conn.send({ type: 'ANSWER_RESULT', isCorrect: false, msg: msg }));
+            }
+
+            const feedback = document.getElementById('feedback-msg');
+            feedback.style.color = '#ef4444';
+            feedback.innerText = msg;
+            showExplanation();
+
+            setTimeout(() => {
+                closeModalAndNext();
+            }, 3500);
+        }
+
+        function showExplanation() {
+            const expBox = document.getElementById('explanation-box');
+            expBox.innerText = `💡 Explicação: ${currentQuestion.explanation}`;
+            expBox.style.display = 'block';
+        }
+
+        function evaluateAnswer(selectedIdx) {
+            if (!isHost && hostConnection) {
+                hostConnection.send({ type: 'ANSWER_QUESTION', selectedIdx: selectedIdx });
+                return;
+            }
+
+            clearInterval(timerInterval);
+            disableOptions();
+
+            const isCorrect = (selectedIdx === currentQuestion.correctIndex);
+            let msg = "";
+
+            if (isCorrect) {
+                let initialPos = playerPositions[currentPlayer];
+                let targetPos = initialPos + currentDiceRoll;
+                
+                if (targetPos >= totalTiles) {
+                    targetPos = totalTiles;
+                }
+
+                let extraMsg = "";
+                if (targetPos < totalTiles) {
+                    if (bonusTiles.includes(targetPos)) {
+                        targetPos = Math.min(totalTiles, targetPos + BONUS_VALUE);
+                        extraMsg = ` 🚀 CAIU EM CASA BÔNUS! Avançou +${BONUS_VALUE} casas!`;
+                    } else if (penaltyTiles.includes(targetPos)) {
+                        targetPos = Math.max(1, targetPos - PENALTY_VALUE);
+                        extraMsg = ` ⚠️ CAIU EM CASA ÔNUS! Recuou -${PENALTY_VALUE} casas!`;
+                    }
+                }
+
+                playerPositions[currentPlayer] = targetPos;
+                updatePawns();
+
+                msg = `✓ Resposta Correta! Avançou para a casa ${targetPos}.${extraMsg}`;
+
+                if (targetPos === totalTiles) {
+                    playerFinished[currentPlayer] = true;
+                    finishRank.push(currentPlayer);
+                }
+
+            } else {
+                msg = `❌ Resposta Incorreta! A alternativa correta era ${String.fromCharCode(65 + currentQuestion.correctIndex)}. Você não avança.`;
+            }
+
+            const feedback = document.getElementById('feedback-msg');
+            feedback.style.color = isCorrect ? '#10b981' : '#ef4444';
+            feedback.innerText = msg;
+            showExplanation();
+
+            if (isHost) {
+                connections.forEach(conn => conn.send({ type: 'ANSWER_RESULT', isCorrect, msg }));
+            }
+
+            setTimeout(() => {
+                closeModalAndNext();
+            }, 4000);
+        }
+
+        function disableOptions() {
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(b => b.disabled = true);
+        }
+
+        function closeModalAndNext() {
+            document.getElementById('question-modal').style.display = 'none';
+            if (isHost) {
+                connections.forEach(conn => conn.send({ type: 'CLOSE_QUESTION' }));
+            }
+            advanceToNextActivePlayer();
+        }
+
+        function showWinModal() {
+            if (isHost) {
+                connections.forEach(conn => conn.send({ type: 'SHOW_WIN' }));
+            }
+            showWinModalUI();
+        }
+
+        function showWinModalUI() {
+            document.getElementById('question-modal').style.display = 'none';
+            
+            const leaderboard = document.getElementById('leaderboard');
+            leaderboard.innerHTML = '<h3>Classificação Final:</h3><br>';
+
+            finishRank.forEach((playerIdx, rank) => {
+                const item = document.createElement('div');
+                item.classList.add('leaderboard-item');
+                
+                let medal = `${rank + 1}º Lugar:`;
+                if (rank === 0) medal = '🥇 1º Lugar (Campeão):';
+                else if (rank === 1) medal = '🥈 2º Lugar:';
+                else if (rank === 2) medal = '🥉 3º Lugar:';
+
+                item.innerHTML = `<span><strong>${medal}</strong> ${getPlayerName(playerIdx)}</span>`;
+                leaderboard.appendChild(item);
+            });
+
+            document.getElementById('win-modal').style.display = 'flex';
+        }
+
+        resetGame();
+    </script>
+</body>
+</html>
