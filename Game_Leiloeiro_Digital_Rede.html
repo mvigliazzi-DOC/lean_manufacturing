@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>O Leilão do Tempo</title>
+
+  <!-- Tailwind CSS para Estilização -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PeerJS para Conexão em Rede P2P via Token -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <style>
+    .modal-blur { backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <!-- TELA DE SETUP / LOGIN -->
+  <div id="screen-login" class="flex-1 flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-2xl max-w-md w-full space-y-6">
+      <div class="text-center">
+        <h1 class="text-3xl font-extrabold text-amber-400">⌛ O Leilão do Tempo</h1>
+        <p class="text-slate-400 text-sm mt-1">Gestão do Tempo e Custo de Oportunidade</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase">Seu Nome / Apelido</label>
+          <input type="text" id="input-name" placeholder="Ex: Lucas" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:border-amber-400">
+        </div>
+
+        <div class="border-t border-slate-700 pt-4 space-y-3">
+          <button onclick="criarSala()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 rounded-lg transition shadow-lg">
+            🔑 Criar Sala como Leiloeiro
+          </button>
+
+          <div class="relative flex py-2 items-center">
+            <div class="flex-grow border-t border-slate-700"></div>
+            <span class="flex-shrink mx-4 text-slate-500 text-xs uppercase font-bold">ou</span>
+            <div class="flex-grow border-t border-slate-700"></div>
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1 font-semibold uppercase">Token da Sala</label>
+            <input type="text" id="input-token" placeholder="Cole o Token do Leiloeiro aqui" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 focus:outline-none focus:border-amber-400 font-mono text-sm">
+          </div>
+
+          <button onclick="entrarSala()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg">
+            🎮 Entrar na Sala como Jogador
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELA PRINCIPAL DO JOGO -->
+  <div id="screen-game" class="hidden flex-1 flex flex-col max-w-6xl w-full mx-auto p-4 space-y-4">
+    
+    <!-- CABEÇALHO DA SALA -->
+    <header class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-wrap justify-between items-center gap-4">
+      <div>
+        <span id="role-badge" class="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-700 text-slate-300">Carregando...</span>
+        <h2 id="user-display-name" class="text-xl font-bold inline-block ml-2 text-white">---</h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Token da Sala (Com botão de cópia) -->
+        <div class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-2">
+          <span class="text-xs text-slate-400">Token:</span>
+          <span id="room-token-display" class="font-mono text-amber-400 font-bold text-sm">---</span>
+          <button onclick="copiarToken()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded border border-slate-600">Copiar</button>
+        </div>
+
+        <!-- Fichas do Jogador -->
+        <div id="fichas-container" class="bg-amber-500/10 border border-amber-500/30 px-4 py-1.5 rounded-lg text-amber-400 font-bold flex items-center gap-2">
+          <span>🪙 Fichas:</span>
+          <span id="player-fichas" class="text-2xl font-black">16</span>
+          <span class="text-xs text-amber-500/70">(8 em Sono)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ÁREA CENTRAL DE JOGO -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
+      
+      <!-- PAINEL ESQUERDO: CONTROLE / STATUS DO LOTE -->
+      <div class="lg:col-span-2 space-y-4 flex flex-col">
+        
+        <!-- PAINEL EXCLUSIVO DO LEILOEIRO -->
+        <div id="leiloeiro-panel" class="hidden bg-slate-800 border border-amber-500/40 rounded-xl p-4 space-y-3">
+          <h3 class="font-bold text-amber-400 text-sm uppercase tracking-wider">Controle do Leiloeiro</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="md:col-span-2">
+              <label class="block text-xs text-slate-400 mb-1">Selecione o Lote</label>
+              <select id="select-item" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+                <option value="Passar no Vestibular / Carreira|4">🎓 Passar no Vestibular / Carreira (Mín: 4 fichas)</option>
+                <option value="Maratonar Série / Redes Sociais|2">📱 Maratonar Série / Redes Sociais (Mín: 2 fichas)</option>
+                <option value="Saúde Mental & Lazer|3">🧘 Saúde Mental & Lazer (Mín: 3 fichas)</option>
+                <option value="Cuidar do Corpo / Esportes|2">⚡ Cuidar do Corpo / Esportes (Mín: 2 fichas)</option>
+                <option value="Vida Social / Amigos|3">❤️ Vida Social / Amigos (Mín: 3 fichas)</option>
+                <option value="Hobby / Habilidade Extra|2">🎨 Hobby / Habilidade Extra (Mín: 2 fichas)</option>
+              </select>
+            </div>
+            <div class="flex items-end gap-2">
+              <button onclick="iniciarLote()" class="w-full bg-emerald-600 hover:bg-emerald-700 font-bold py-2 px-3 rounded-lg text-sm transition">
+                Abrir Lote
+              </button>
+              <button onclick="baterMartelo()" class="w-full bg-red-600 hover:bg-red-700 font-bold py-2 px-3 rounded-lg text-sm transition">
+                🔨 Bater Martelo
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MESA DE LEILÃO (AO VIVO) -->
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 flex-1 flex flex-col justify-between space-y-6">
+          <div class="text-center space-y-2">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Lote Atual em Disputa</span>
+            <h2 id="lote-nome" class="text-2xl md:text-3xl font-black text-white">Aguardando início...</h2>
+            <div id="lote-min-badge" class="inline-block bg-slate-700 text-slate-300 text-xs px-3 py-1 rounded-full font-semibold">
+              Lance Mínimo: -
+            </div>
+          </div>
+
+          <!-- LANCE MAIS ALTO -->
+          <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl p-6 text-center space-y-1">
+            <span class="text-xs font-semibold text-amber-500 uppercase">Oferta Líder</span>
+            <div id="high-bid-value" class="text-4xl font-black text-amber-400">0 Fichas</div>
+            <div id="high-bid-author" class="text-slate-400 text-sm">Nenhum lance efetuado</div>
+          </div>
+
+          <!-- CONTROLES DE LANCE DO JOGADOR -->
+          <div id="jogador-controls" class="space-y-3">
+            <div class="flex gap-3">
+              <input type="number" id="input-bid" placeholder="Qtd de Fichas" min="1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-lg font-bold text-center text-amber-400 focus:outline-none focus:border-amber-400">
+              <button onclick="ofertar()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-8 rounded-lg text-lg transition shadow-lg flex-shrink-0">
+                Dar Lance
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL DIREITO: JOGADORES NA SALA & HISTÓRICO DE ARREMATAÇÕES -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col space-y-4">
+        <h3 class="font-bold text-slate-300 text-sm uppercase tracking-wider flex justify-between items-center">
+          <span>Jogadores</span>
+          <span id="player-count" class="bg-slate-700 text-slate-300 text-xs px-2 py-0.5 rounded-full">0</span>
+        </h3>
+
+        <div id="players-list" class="space-y-2 flex-1 overflow-y-auto max-h-[400px]">
+          <!-- Lista preenchida via JS -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL PARA EMPATE DE LANCES (LANCE IGUAL) -->
+  <div id="modal-tie" class="fixed inset-0 bg-slate-950/80 modal-blur hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-800 border border-amber-500/50 p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center space-y-4">
+      <div class="text-4xl">⚠️</div>
+      <h3 class="text-lg font-bold text-white">Atenção! Lance Empatado</h3>
+      <p class="text-slate-300 text-sm">
+        Seu lance é <strong id="tie-bid-amount" class="text-amber-400">X</strong> fichas, igual ao de outro jogador. Deseja aumentar sua oferta ou desistir do lote?
+      </p>
+      <div class="flex gap-2">
+        <button onclick="resolverEmpate('desistir')" class="w-full bg-slate-700 hover:bg-slate-600 font-bold py-2.5 rounded-lg text-sm text-slate-200 transition">
+          Desistir
+        </button>
+        <button onclick="resolverEmpate('aumentar')" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-lg text-sm transition">
+          Aumentar Oferta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ESTADO DO JOGO
+    let peer = null;
+    let connections = []; // conexões do leiloeiro com os jogadores
+    let hostConn = null;  // conexão do jogador com o leiloeiro
+    
+    let isHost = false;
+    let myName = "";
+    let myPeerId = "";
+    let roomToken = "";
+
+    let myFichas = 16; // 24 total - 8 sono = 16 para o leilão
+
+    let gameState = {
+      itemAtual: null,
+      minFichas: 0,
+      lances: {}, // { peerId: { nome, fichas } }
+      jogadores: {} // { peerId: { nome, fichasRestantes, inventario: [] } }
+    };
+
+    // INICIALIZAÇÃO E PEERJS
+    function initPeer(id = null) {
+      return new Promise((resolve) => {
+        peer = id ? new Peer(id) : new Peer();
+        peer.on('open', (peerId) => {
+          myPeerId = peerId;
+          resolve(peerId);
+        });
+
+        peer.on('connection', (conn) => {
+          if (isHost) {
+            setupHostConnection(conn);
+          }
+        });
+      });
+    }
+
+    // AÇÕES DO LEILOEIRO (HOST)
+    async function criarSala() {
+      myName = document.getElementById('input-name').value.trim() || 'Leiloeiro';
+      isHost = true;
+      
+      const id = 'leilao-tempo-' + Math.random().toString(36).substring(2, 8);
+      await initPeer(id);
+      
+      roomToken = id;
+      gameState.jogadores[myPeerId] = { nome: myName, fichasRestantes: 16, eHost: true };
+
+      document.getElementById('role-badge').innerText = 'Leiloeiro';
+      document.getElementById('role-badge').className = 'px-2.5 py-1 text-xs font-bold rounded-full bg-amber-500 text-slate-950';
+      document.getElementById('leiloeiro-panel').classList.remove('hidden');
+      document.getElementById('fichas-container').classList.add('hidden'); // Leiloeiro não joga fichas
+
+      renderUI();
+      trocarTela();
+    }
+
+    function setupHostConnection(conn) {
+      connections.push(conn);
+      
+      conn.on('data', (data) => {
+        handleHostData(data, conn);
+      });
+
+      conn.on('close', () => {
+        delete gameState.jogadores[conn.peer];
+        broadcastGameState();
+      });
+    }
+
+    function handleHostData(data, conn) {
+      if (data.type === 'JOIN') {
+        gameState.jogadores[conn.peer] = { nome: data.nome, fichasRestantes: 16, eHost: false };
+        broadcastGameState();
+      }
+
+      if (data.type === 'BID') {
+        if (!gameState.itemAtual) return;
+        
+        // Registrar ou atualizar o lance do jogador
+        gameState.lances[conn.peer] = {
+          nome: gameState.jogadores[conn.peer].nome,
+          fichas: data.fichas
+        };
+
+        verificarEmpates();
+        broadcastGameState();
+      }
+    }
+
+    function broadcastGameState() {
+      connections.forEach(conn => {
+        if (conn.open) conn.send({ type: 'STATE_UPDATE', state: gameState });
+      });
+      renderUI();
+    }
+
+    function iniciarLote() {
+      const select = document.getElementById('select-item').value;
+      const [nome, min] = select.split('|');
+      
+      gameState.itemAtual = nome;
+      gameState.minFichas = parseInt(min);
+      gameState.lances = {}; // Limpa os lances do lote anterior
+
+      broadcastGameState();
+    }
+
+    function verificarEmpates() {
+      // Agrupa lances por quantidade de fichas
+      const lancesAgrupados = {};
+      Object.entries(gameState.lances).forEach(([peerId, data]) => {
+        if (!lancesAgrupados[data.fichas]) lancesAgrupados[data.fichas] = [];
+        lancesAgrupados[data.fichas].push(peerId);
+      });
+
+      // Descobre a maior oferta e verifica se há empate na liderança
+      const maioresOfertas = Object.keys(lancesAgrupados).map(Number).sort((a, b) => b - a);
+      if (maioresOfertas.length > 0) {
+        const maior = maioresOfertas[0];
+        const empatados = lancesAgrupados[maior];
+
+        if (empatados.length > 1) {
+          // Notifica os jogadores em situação de empate
+          connections.forEach(conn => {
+            if (empatados.includes(conn.peer)) {
+              conn.send({ type: 'TIE_ALERT', fichas: maior });
+            }
+          });
+        }
+      }
+    }
+
+    function baterMartelo() {
+      if (!gameState.itemAtual) return;
+
+      // Encontrar o vencedor
+      let vencedorId = null;
+      let maiorLance = -1;
+
+      Object.entries(gameState.lances).forEach(([peerId, data]) => {
+        if (data.fichas > maiorLance) {
+          maiorLance = data.fichas;
+          vencedorId = peerId;
+        }
+      });
+
+      if (vencedorId && gameState.jogadores[vencedorId]) {
+        // Desconta fichas do jogador arrematante
+        gameState.jogadores[vencedorId].fichasRestantes -= maiorLance;
+        
+        // Notifica o vencedor para atualizar suas fichas locais
+        connections.forEach(conn => {
+          if (conn.peer === vencedorId) {
+            conn.send({ type: 'WIN_ITEM', fichasGastas: maiorLance, item: gameState.itemAtual });
+          }
+        });
+      }
+
+      // Reseta lote atual
+      gameState.itemAtual = null;
+      gameState.minFichas = 0;
+      gameState.lances = {};
+
+      broadcastGameState();
+    }
+
+    // AÇÕES DO JOGADOR (CLIENT)
+    async function entrarSala() {
+      myName = document.getElementById('input-name').value.trim() || 'Jogador';
+      roomToken = document.getElementById('input-token').value.trim();
+
+      if (!roomToken) {
+        alert("Por favor, informe o Token da Sala!");
+        return;
+      }
+
+      await initPeer();
+      hostConn = peer.connect(roomToken);
+
+      hostConn.on('open', () => {
+        hostConn.send({ type: 'JOIN', nome: myName });
+        
+        document.getElementById('role-badge').innerText = 'Jogador';
+        document.getElementById('role-badge').className = 'px-2.5 py-1 text-xs font-bold rounded-full bg-blue-500 text-white';
+        
+        renderUI();
+        trocarTela();
+      });
+
+      hostConn.on('data', (data) => {
+        if (data.type === 'STATE_UPDATE') {
+          gameState = data.state;
+          renderUI();
+        }
+
+        if (data.type === 'TIE_ALERT') {
+          document.getElementById('tie-bid-amount').innerText = data.fichas;
+          document.getElementById('modal-tie').classList.remove('hidden');
+        }
+
+        if (data.type === 'WIN_ITEM') {
+          myFichas -= data.fichasGastas;
+          document.getElementById('player-fichas').innerText = myFichas;
+          alert(`🎉 Parabéns! Você arrematou "${data.item}" por ${data.fichasGastas} fichas!`);
+        }
+      });
+    }
+
+    function ofertar() {
+      const input = document.getElementById('input-bid');
+      const fichas = parseInt(input.value);
+
+      if (isNaN(fichas) || fichas <= 0) {
+        alert("Informe uma quantidade válida de fichas.");
+        return;
+      }
+
+      if (fichas > myFichas) {
+        alert("Você não possui fichas suficientes!");
+        return;
+      }
+
+      if (fichas < gameState.minFichas) {
+        alert(`O lance mínimo para este lote é de ${gameState.minFichas} fichas.`);
+        return;
+      }
+
+      hostConn.send({ type: 'BID', fichas: fichas });
+      input.value = '';
+    }
+
+    function resolverEmpate(opcao) {
+      document.getElementById('modal-tie').classList.add('hidden');
+      if (opcao === 'aumentar') {
+        document.getElementById('input-bid').focus();
+      } else {
+        // Se desistir, pode zerar a oferta no servidor
+        hostConn.send({ type: 'BID', fichas: 0 });
+      }
+    }
+
+    // ATUALIZAÇÃO DA INTERFACE (RENDER)
+    function renderUI() {
+      document.getElementById('user-display-name').innerText = myName;
+      document.getElementById('room-token-display').innerText = roomToken || '---';
+
+      // Atualiza Lote Atual
+      if (gameState.itemAtual) {
+        document.getElementById('lote-nome').innerText = gameState.itemAtual;
+        document.getElementById('lote-min-badge').innerText = `Lance Mínimo: ${gameState.minFichas} fichas`;
+      } else {
+        document.getElementById('lote-nome').innerText = 'Aguardando o Leiloeiro...';
+        document.getElementById('lote-min-badge').innerText = 'Lance Mínimo: -';
+      }
+
+      // Descobre a oferta mais alta
+      let maiorLance = 0;
+      let autorMaiorLance = 'Nenhum lance efetuado';
+
+      Object.values(gameState.lances).forEach(l => {
+        if (l.fichas > maiorLance) {
+          maiorLance = l.fichas;
+          autorMaiorLance = `Ofertado por ${l.nome}`;
+        } else if (l.fichas === maiorLance && maiorLance > 0) {
+          autorMaiorLance += ` (Empatado com outro jogador!)`;
+        }
+      });
+
+      document.getElementById('high-bid-value').innerText = `${maiorLance} Fichas`;
+      document.getElementById('high-bid-author').innerText = autorMaiorLance;
+
+      // Renderiza Lista de Jogadores
+      const listEl = document.getElementById('players-list');
+      listEl.innerHTML = '';
+      
+      const jogadoresArr = Object.values(gameState.jogadores);
+      document.getElementById('player-count').innerText = jogadoresArr.length;
+
+      jogadoresArr.forEach(j => {
+        if (j.eHost) return; // Oculta leiloeiro do placar
+        const div = document.createElement('div');
+        div.className = "bg-slate-900/60 border border-slate-700/50 p-3 rounded-lg flex justify-between items-center text-sm";
+        div.innerHTML = `
+          <span class="font-bold text-slate-200">${j.nome}</span>
+          <span class="font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded text-xs">
+            🪙 ${j.fichasRestantes} fichas
+          </span>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    // UTILITÁRIOS
+    function trocarTela() {
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('screen-game').classList.remove('hidden');
+    }
+
+    function copiarToken() {
+      navigator.clipboard.writeText(roomToken);
+      alert('Token da sala copiado para a área de transferência!');
+    }
+  </script>
+</body>
+</html>
