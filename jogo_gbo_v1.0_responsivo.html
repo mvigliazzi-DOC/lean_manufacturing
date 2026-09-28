@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jogo de Balanceamento — GBO</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f7fb;color:#1e293b}.wrap{max-width:1500px;margin:auto;padding:16px}.grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}.card{background:#fff;border:1px solid #d8e0ea;border-radius:16px;padding:20px;box-shadow:0 2px 7px rgba(15,23,42,.04)}h1{margin:0 0 10px;font-size:30px}h2{margin:0 0 12px;font-size:22px}.small{font-size:16px;line-height:1.5;color:#64748b}.phases{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}.phase{padding:9px 13px;border:1px solid #d6dee9;border-radius:11px;font-weight:700;font-size:14px;background:#f8fafc}.phase.active{background:#dbeafe;border-color:#93c5fd}.phase.done{background:#dcfce7;border-color:#86efac;color:#166534}.message{margin:12px 0;padding:13px 15px;border-radius:12px;background:#eff6ff;color:#1e3a8a;font-weight:700;line-height:1.4}.message.error{background:#fee2e2;color:#991b1b}.message.success{background:#dcfce7;color:#166534}.actions{display:flex;flex-wrap:wrap;gap:10px}.actions button{border:1px solid #d4dce7;background:#fff;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;cursor:pointer}.actions button:hover{filter:brightness(.98)}.actions .primary{background:#2563eb;color:#fff;border-color:#2563eb}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.stat{background:#f8fafc;border-radius:12px;padding:12px;text-align:center}.stat b{display:block;font-size:24px}.stat span{font-size:13px;color:#64748b}.chartwrap{overflow-x:auto}.chart{min-width:900px}.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:#64748b;margin-top:8px}.line{display:inline-block;width:28px;height:3px;vertical-align:middle;margin-right:6px}.stations{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.station{border:1px solid #d8e0ea;border-radius:12px;padding:13px;background:#fff}.station.good{border:2px solid #16a34a}.station.bad{border:2px solid #dc2626}.head{font-size:17px;font-weight:800}.base{font-size:13px;color:#64748b;margin:4px 0 10px}.controls{display:flex;align-items:center;justify-content:center;gap:12px}.controls button{width:38px;height:38px;border:1px solid #cbd5e1;border-radius:9px;background:#f8fafc;font-size:24px;font-weight:700;cursor:pointer}.counter{min-width:34px;text-align:center;font-size:22px;font-weight:800}.time{margin-top:9px;text-align:center;font-size:14px}.time b{font-size:16px}.hint{margin-top:10px;padding:10px;border-radius:10px;background:#f8fafc;font-size:13px;color:#64748b}.footer-note{margin-top:12px;font-size:13px;color:#64748b}
+@media(max-width:1100px){
+  .wrap{padding:14px}
+  .grid{grid-template-columns:1fr}
+  .stations{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+@media(max-width:760px){
+  .wrap{padding:10px}
+  .card{padding:15px;border-radius:13px}
+  h1{font-size:25px;line-height:1.2}
+  h2{font-size:20px}
+  .small{font-size:15px}
+  .phases{gap:6px}
+  .phase{padding:8px 10px;font-size:13px}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .actions button{width:100%;padding:11px 10px;font-size:15px}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .stat{padding:10px 7px}
+  .stat b{font-size:21px}
+  .stat span{font-size:12px}
+  .chartwrap{width:100%;overflow:hidden}
+  .chart{width:100%;min-width:0}
+  .chart svg{display:block;width:100%;height:auto}
+  .stations{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .station{padding:10px}
+  .head{font-size:16px}
+  .base{font-size:12px;line-height:1.35}
+  .controls{gap:9px}
+  .controls button{width:40px;height:40px}
+  .counter{font-size:21px}
+}
+
+@media(max-width:480px){
+  .wrap{padding:7px}
+  .card{padding:12px}
+  h1{font-size:22px}
+  h2{font-size:18px}
+  .small{font-size:14px}
+  .actions{grid-template-columns:1fr}
+  .actions button{font-size:14px}
+  .phase{font-size:12px;padding:7px 9px}
+  .message{padding:11px 12px;font-size:14px}
+  .stations{grid-template-columns:1fr;gap:8px}
+  .station{padding:12px}
+  .chartwrap{margin:0 -2px}
+  .legend{gap:10px;font-size:11px}
+  .line{width:22px}
+  .hint,.footer-note{font-size:12px}
+}
+
+@media(min-width:1101px){
+  .chart{min-width:900px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="grid">
+<section class="card">
+<h1>Jogo de Balanceamento — GBO</h1>
+<div class="small">Distribua os operadores entre 12 postos. O objetivo é manter os tempos dos postos dentro de ±15% do tempo ideal fixo da fase. Você pode deixar operadores sem alocar.</div>
+<div id="phases" class="phases"></div>
+<div id="message" class="message"></div>
+<div class="actions">
+<button id="reset" class="primary">Reiniciar fase</button>
+<button id="clear">Zerar operadores</button>
+<button id="check">Verificar solução</button>
+<button id="next" style="display:none">Próxima fase →</button>
+</div>
+</section>
+<section class="card">
+<h2>Indicadores</h2>
+<div class="stats">
+<div class="stat"><b id="phaseNo">1/8</b><span>Fase</span></div>
+<div class="stat"><b id="used">0</b><span>Usados</span></div>
+<div class="stat"><b id="available">30</b><span>Disponíveis</span></div>
+<div class="stat"><b id="ideal">10,53 min</b><span>Tempo ideal fixo</span></div>
+</div>
+<div id="phaseInfo" class="small" style="margin-top:10px"></div>
+</section>
+</div>
+
+<section class="card" style="margin-top:16px">
+<h2>Gráfico de balanceamento</h2>
+<div class="chartwrap"><div class="chart"><svg id="chart" viewBox="0 0 1000 330"></svg></div></div>
+<div class="legend"><span><i class="line" style="background:#2563eb"></i>Tempo ideal fixo</span><span id="upLegend" style="display:none"><i class="line" style="background:#dc2626"></i>Limite superior</span><span id="loLegend" style="display:none"><i class="line" style="background:#f59e0b"></i>Limite inferior</span></div>
+</section>
+
+<section class="card" style="margin-top:16px">
+<h2>Postos de trabalho</h2>
+<div id="stations" class="stations"></div>
+<div class="hint"><b>Regra:</b> tempo do posto = tempo produtivo da operação ÷ operadores alocados no posto. O tempo ideal da fase é fixo e não muda quando você usa menos operadores.</div>
+<div class="footer-note">A solução somente é aprovada quando os 12 postos têm pelo menos 1 operador e todos os tempos ficam entre 85% e 115% do tempo ideal fixo.</div>
+</section>
+</div>
+<script>
+const FASES = [{"op":30,"t":[36,27,21,19,21,21,35,30,22,34,28,22],"ideal":10.533333333333333,"lower":8.953333333333333,"upper":12.113333333333332},{"op":40,"t":[30,47,35,46,21,37,40,22,44,24,40,48],"ideal":10.85,"lower":9.2225,"upper":12.4775},{"op":55,"t":[30,50,43,51,52,40,32,59,60,42,67,45],"ideal":10.381818181818181,"lower":8.824545454545454,"upper":11.939090909090908},{"op":70,"t":[47,74,50,48,52,59,39,72,72,65,38,78],"ideal":9.914285714285715,"lower":8.427142857142858,"upper":11.401428571428571},{"op":85,"t":[88,99,56,110,113,79,56,73,61,54,55,75],"ideal":10.811764705882354,"lower":9.19,"upper":12.433529411764706},{"op":100,"t":[83,37,41,80,111,47,55,55,62,58,87,75],"ideal":7.91,"lower":6.7235,"upper":9.096499999999999},{"op":120,"t":[95,64,58,59,96,69,89,67,129,91,73,95],"ideal":8.208333333333334,"lower":6.977083333333334,"upper":9.439583333333333},{"op":140,"t":[60,56,77,136,96,106,96,130,59,61,96,76],"ideal":7.492857142857143,"lower":6.3689285714285715,"upper":8.616785714285713}];
+const DISTRIBUICOES_INICIAIS = [[0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0],[7,6,6,5,7,5,4,8,7,5,4,6],[6,7,5,7,6,6,7,8,8,6,7,7],[9,7,9,8,6,8,10,8,9,10,9,7],[8,9,9,11,10,8,12,10,9,12,10,12],[12,11,15,12,10,9,9,12,15,10,12,13]];
+const NOMES = ["Preparação","Corte","Usinagem","Furação","Montagem inicial","Inspeção dimensional","Montagem final","Ajuste","Teste funcional","Acabamento","Inspeção final","Embalagem"];
+let faseAtual = 0;
+let operadores = [];
+let verificado = false;
+let concluidas = Array(FASES.length).fill(false);
+
+const $ = id => document.getElementById(id);
+const fase = () => FASES[faseAtual];
+const usados = () => operadores.reduce((s,n)=>s+n,0);
+const tempoPosto = i => operadores[i] > 0 ? fase().t[i] / operadores[i] : null;
+const dentroDaFaixa = t => t !== null && Number.isFinite(t) && t >= fase().lower && t <= fase().upper;
+const fmt = n => n.toFixed(2) + " min";
+
+function desenharFases(){
+  $("phases").innerHTML = "";
+  FASES.forEach((f,i)=>{
+    const d=document.createElement("span");
+    d.className="phase"+(i===faseAtual?" active":"")+(concluidas[i]?" done":"");
+    d.textContent=`Fase ${i+1} · ${f.op} op.`;
+    $("phases").appendChild(d);
+  });
+}
+
+function desenharPostos(){
+  $("stations").innerHTML="";
+  fase().t.forEach((base,i)=>{
+    const t=tempoPosto(i);
+    const ok=dentroDaFaixa(t);
+    const d=document.createElement("div");
+    d.className="station"+(verificado?(ok?" good":" bad"):"");
+    d.innerHTML=`<div class="head">Posto ${String(i+1).padStart(2,"0")}</div>
+      <div class="base">${NOMES[i]} · ${base} min</div>
+      <div class="controls">
+        <button data-i="${i}" data-d="-1" aria-label="Retirar operador">−</button>
+        <div class="counter">${operadores[i]}</div>
+        <button data-i="${i}" data-d="1" aria-label="Adicionar operador">+</button>
+      </div>
+      <div class="time">Tempo do posto: <b>${t===null?"—":fmt(t)}</b></div>`;
+    $("stations").appendChild(d);
+  });
+  document.querySelectorAll("#stations button").forEach(btn=>{
+    btn.onclick=()=>alterarOperador(Number(btn.dataset.i), Number(btn.dataset.d));
+  });
+}
+
+function alterarOperador(i, delta){
+  if(delta>0 && usados()>=fase().op) return;
+  if(delta<0 && operadores[i]<=0) return;
+  operadores[i]+=delta;
+  verificado=false;
+  concluidas[faseAtual]=false;
+  $("next").style.display="none";
+  $("message").className="message";
+  $("message").textContent="Distribuição alterada. Clique em “Verificar solução” para conferir o balanceamento.";
+  atualizar();
+}
+
+function grafico(){
+  const svg=$("chart"), W=1000,H=330,L=52,R=18,T=18,B=48;
+  const vals=fase().t.map((_,i)=>tempoPosto(i)||0);
+  const max=Math.max(fase().upper*1.25,...vals,1);
+  const ch=H-T-B,cw=W-L-R,gap=cw/12,bw=gap*.62;
+  const y=v=>T+ch-(v/max)*ch;
+  let h="";
+  for(let k=0;k<=5;k++){
+    const v=max*k/5,yy=y(v);
+    h+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="#dbe2ea"/>`;
+    h+=`<text x="${L-7}" y="${yy+4}" text-anchor="end" font-size="11" fill="#64748b">${v.toFixed(0)}</text>`;
+  }
+  h+=`<line x1="${L}" x2="${L}" y1="${T}" y2="${H-B}" stroke="#94a3b8"/>`;
+  h+=`<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="#94a3b8"/>`;
+  h+=`<line x1="${L}" x2="${W-R}" y1="${y(fase().ideal)}" y2="${y(fase().ideal)}" stroke="#2563eb" stroke-width="2.5" stroke-dasharray="3 4"/>`;
+  h+=`<text x="${W-R-2}" y="${y(fase().ideal)-5}" text-anchor="end" font-size="11" font-weight="bold" fill="#2563eb">Ideal ${fase().ideal.toFixed(2)} min</text>`;
+  if(verificado){
+    h+=`<line x1="${L}" x2="${W-R}" y1="${y(fase().upper)}" y2="${y(fase().upper)}" stroke="#dc2626" stroke-width="2" stroke-dasharray="7 5"/>`;
+    h+=`<text x="${W-R-2}" y="${y(fase().upper)-5}" text-anchor="end" font-size="11" fill="#dc2626">Sup. ${fase().upper.toFixed(2)}</text>`;
+    h+=`<line x1="${L}" x2="${W-R}" y1="${y(fase().lower)}" y2="${y(fase().lower)}" stroke="#f59e0b" stroke-width="2" stroke-dasharray="7 5"/>`;
+    h+=`<text x="${W-R-2}" y="${y(fase().lower)-5}" text-anchor="end" font-size="11" fill="#b45309">Inf. ${fase().lower.toFixed(2)}</text>`;
+  }
+  fase().t.forEach((base,i)=>{
+    const x=L+i*gap+(gap-bw)/2,v=vals[i],hh=v?Math.max(2,v/max*ch):0,yy=H-B-hh;
+    const fill=verificado?(dentroDaFaixa(v)?"#16a34a":"#dc2626"):"#64748b";
+    h+=`<rect x="${x}" y="${yy}" width="${bw}" height="${hh}" rx="4" fill="${fill}"/>`;
+    h+=`<text x="${x+bw/2}" y="${yy-5}" text-anchor="middle" font-size="11" font-weight="bold">${v?v.toFixed(1):"—"}</text>`;
+    h+=`<text x="${x+bw/2}" y="${H-B+17}" text-anchor="middle" font-size="10">P${String(i+1).padStart(2,"0")}</text>`;
+    h+=`<text x="${x+bw/2}" y="${H-B+31}" text-anchor="middle" font-size="9" fill="#64748b">${operadores[i]} op.</text>`;
+  });
+  svg.innerHTML=h;
+  $("upLegend").style.display=verificado?"inline":"none";
+  $("loLegend").style.display=verificado?"inline":"none";
+}
+
+function atualizar(){
+  $("phaseNo").textContent=`${faseAtual+1}/${FASES.length}`;
+  $("used").textContent=usados();
+  $("available").textContent=fase().op;
+  $("ideal").textContent=fmt(fase().ideal);
+  $("phaseInfo").innerHTML=`<b>${fase().op} operadores</b> disponíveis · carga produtiva total: <b>${fase().t.reduce((a,b)=>a+b,0)} min</b> · tempo ideal fixo: <b>${fmt(fase().ideal)}</b> · faixa: <b>${fmt(fase().lower)} a ${fmt(fase().upper)}</b> após verificação.`;
+  desenharFases();
+  desenharPostos();
+  grafico();
+}
+
+function verificar(){
+  verificado=true;
+  const problemas=[];
+  operadores.forEach((op,i)=>{
+    const t=tempoPosto(i);
+    if(op<=0) problemas.push(`P${String(i+1).padStart(2,"0")} (sem operador)`);
+    else if(t < fase().lower) problemas.push(`P${String(i+1).padStart(2,"0")} (${fmt(t)} abaixo do limite)`);
+    else if(t > fase().upper) problemas.push(`P${String(i+1).padStart(2,"0")} (${fmt(t)} acima do limite)`);
+  });
+  atualizar();
+  if(problemas.length===0){
+    concluidas[faseAtual]=true;
+    desenharFases();
+    $("message").className="message success";
+    $("message").textContent=`🎯 Fase ${faseAtual+1} concluída! Todos os 12 postos estão dentro de ±15% do tempo ideal fixo de ${fmt(fase().ideal)}, utilizando ${usados()} de ${fase().op} operadores.`;
+    $("next").style.display=faseAtual<FASES.length-1?"inline-block":"none";
+  }else{
+    concluidas[faseAtual]=false;
+    desenharFases();
+    $("message").className="message error";
+    $("message").textContent=`Ainda não balanceado. Ajuste: ${problemas.join(", ")}. Tempo ideal fixo da fase: ${fmt(fase().ideal)}.`;
+    $("next").style.display="none";
+  }
+}
+
+function reiniciar(){
+  verificado=false;
+  concluidas[faseAtual]=false;
+  $("next").style.display="none";
+  operadores=DISTRIBUICOES_INICIAIS[faseAtual].slice();
+  $("message").className="message";
+  $("message").textContent=faseAtual>=3?`Fase ${faseAtual+1} iniciada com distribuição desequilibrada. Rebalanceie os 12 postos.`:`Fase ${faseAtual+1} pronta. Distribua os operadores entre os 12 postos.`;
+  atualizar();
+}
+
+$("reset").onclick=reiniciar;
+$("clear").onclick=()=>{
+  operadores=Array(12).fill(0);
+  verificado=false;
+  concluidas[faseAtual]=false;
+  $("next").style.display="none";
+  $("message").className="message";
+  $("message").textContent="Operadores zerados. Monte seu próprio balanceamento e depois clique em “Verificar solução”.";
+  atualizar();
+};
+$("check").onclick=verificar;
+$("next").onclick=()=>{if(faseAtual<FASES.length-1){faseAtual++;reiniciar();}};
+reiniciar();
+</script>
+</body>
+</html>
