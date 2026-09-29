@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jogo de Balanceamento Avançado — GBO</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f7fb;color:#1e293b}.wrap{max-width:1500px;margin:auto;padding:16px}.grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}.card{background:#fff;border:1px solid #d8e0ea;border-radius:16px;padding:20px;box-shadow:0 2px 7px rgba(15,23,42,.04)}h1{margin:0 0 10px;font-size:28px}h2{margin:0 0 12px;font-size:20px}.small{font-size:15px;line-height:1.5;color:#64748b}.phases{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}.phase{padding:9px 13px;border:1px solid #d6dee9;border-radius:11px;font-weight:700;font-size:13px;background:#f8fafc}.phase.active{background:#dbeafe;border-color:#93c5fd}.phase.done{background:#dcfce7;border-color:#86efac;color:#166534}.message{margin:12px 0;padding:13px 15px;border-radius:12px;background:#eff6ff;color:#1e3a8a;font-weight:700;line-height:1.4}.message.error{background:#fee2e2;color:#991b1b}.message.success{background:#dcfce7;color:#166534}.message.warning{background:#fef3c7;color:#92400e}.actions{display:flex;flex-wrap:wrap;gap:10px}.actions button{border:1px solid #d4dce7;background:#fff;border-radius:10px;padding:12px 18px;font-size:15px;font-weight:700;cursor:pointer}.actions button:hover:not(:disabled){filter:brightness(.98)}.actions button:disabled{opacity:.5;cursor:not-allowed}.actions .primary{background:#2563eb;color:#fff;border-color:#2563eb}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.stat{background:#f8fafc;border-radius:12px;padding:12px;text-align:center}.stat b{display:block;font-size:20px}.stat span{font-size:12px;color:#64748b}.chartwrap{overflow-x:auto}.chart{min-width:900px}.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:#64748b;margin-top:8px}.line{display:inline-block;width:28px;height:3px;vertical-align:middle;margin-right:6px}.stations{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.station{border:1px solid #d8e0ea;border-radius:12px;padding:13px;background:#fff;position:relative}.station.good{border:2px solid #16a34a}.station.bad{border:2px solid #dc2626}.head{font-size:16px;font-weight:800}.base{font-size:12px;color:#64748b;margin:4px 0 8px}.controls-group{display:flex;flex-direction:column;gap:6px;margin:8px 0}.op-type-row{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:4px 8px;border-radius:8px;font-size:12px}.op-type-row span{font-weight:bold}.controls{display:flex;align-items:center;gap:6px}.controls button{width:28px;height:28px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;font-size:16px;font-weight:700;cursor:pointer}.controls button:disabled{opacity:.4;cursor:not-allowed;background:#e2e8f0}.counter{min-width:20px;text-align:center;font-size:14px;font-weight:800}.time{margin-top:8px;text-align:center;font-size:13px}.time b{font-size:15px}.hint{margin-top:10px;padding:10px;border-radius:10px;background:#f8fafc;font-size:13px;color:#64748b}.footer-note{margin-top:12px;font-size:13px;color:#64748b}
+
+.timer-box{font-size:22px;font-weight:bold;color:#dc2626;display:inline-block;margin-left:10px}
+.event-badge{position:absolute;top:10px;right:10px;background:#fee2e2;color:#991b1b;font-size:10px;padding:3px 6px;border-radius:6px;font-weight:bold}
+
+.mode-selector {
+  margin-bottom: 12px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: bold;
+}
+.mode-selector label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media(max-width:1100px){.grid{grid-template-columns:1fr}.stations{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.stations{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:repeat(2,1fr)}.actions{display:grid;grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.stations{grid-template-columns:1fr}.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="grid">
+<section class="card">
+<h1>Jogo de Balanceamento Avançado — GBO</h1>
+<div class="small">Gerencie postos, tipos de operadores (custo vs velocidade) e responda a imprevistos da fábrica antes que o tempo do turno acabe!</div>
+
+<div class="mode-selector">
+  <span>Modo de Jogo:</span>
+  <label><input type="radio" name="gameMode" value="imprevisto" checked> ⚡ Com Imprevistos (120s · Elemento Surpresa a cada 45s)</label>
+  <label><input type="radio" name="gameMode" value="normal"> 🎯 Sem Imprevistos (90s · Foco no Balanceamento)</label>
+</div>
+
+<div id="phases" class="phases"></div>
+<div id="message" class="message"></div>
+<div class="actions">
+<button id="reset" class="primary">Reiniciar fase</button>
+<button id="clear">Zerar operadores</button>
+<button id="triggerEvent">Gerar imprevisto ⚠️</button>
+<button id="check">Verificar solução</button>
+<button id="next" style="display:none">Próxima fase →</button>
+</div>
+</section>
+<section class="card">
+<h2>Indicadores & Orçamento</h2>
+<div class="stats">
+<div class="stat"><b id="phaseNo">1/8</b><span>Fase</span></div>
+<div class="stat"><b id="timerDisplay">120s</b><span>Tempo de Turno</span></div>
+<div class="stat"><b id="budgetDisplay">R$ 0</b><span>Orçamento Restante</span></div>
+<div class="stat"><b id="ideal">10,53 min</b><span>Tempo ideal fixo</span></div>
+</div>
+<div id="phaseInfo" class="small" style="margin-top:10px"></div>
+</section>
+</div>
+
+<section class="card" style="margin-top:16px">
+<h2>Gráfico de balanceamento</h2>
+<div class="chartwrap"><div class="chart"><svg id="chart" viewBox="0 0 1000 330"></svg></div></div>
+<div class="legend"><span><i class="line" style="background:#2563eb"></i>Tempo ideal fixo</span><span id="upLegend" style="display:none"><i class="line" style="background:#dc2626"></i>Limite superior</span><span id="loLegend" style="display:none"><i class="line" style="background:#f59e0b"></i>Limite inferior</span></div>
+</section>
+
+<section class="card" style="margin-top:16px">
+<h2>Postos de trabalho</h2>
+<div id="stations" class="stations"></div>
+<div class="hint"><b>Tipos de Operador:</b> <br>
+• <b>Júnior (J)</b>: Custo R$ 100 | Poder de Trabalho: 0.8<br>
+• <b>Pleno (P)</b>: Custo R$ 200 | Poder de Trabalho: 1.0<br>
+• <b>Sênior (S)</b>: Custo R$ 350 | Poder de Trabalho: 1.4</div>
+<div class="footer-note">Aprovado quando todos os postos têm ≥1 operador e os tempos ficam dentro de ±15% do ideal, dentro do orçamento e do limite de tempo.</div>
+</section>
+</div>
+
+<script>
+const OP_TYPES = {
+  jr: { name: "Júnior", cost: 100, power: 0.8 },
+  pl: { name: "Pleno", cost: 200, power: 1.0 },
+  sr: { name: "Sênior", cost: 350, power: 1.4 }
+};
+
+const FASES = [
+  {"opMax":30, "budget": 5000, "t":[36,27,21,19,21,21,35,30,22,34,28,22],"ideal":10.53,"lower":8.95,"upper":12.11},
+  {"opMax":40, "budget": 7000, "t":[30,47,35,46,21,37,40,22,44,24,40,48],"ideal":10.85,"lower":9.22,"upper":12.47},
+  {"opMax":55, "budget": 9500, "t":[30,50,43,51,52,40,32,59,60,42,67,45],"ideal":10.38,"lower":8.82,"upper":11.93},
+  {"opMax":70, "budget": 12000, "t":[47,74,50,48,52,59,39,72,72,65,38,78],"ideal":9.91,"lower":8.42,"upper":11.40},
+  {"opMax":85, "budget": 15000, "t":[88,99,56,110,113,79,56,73,61,54,55,75],"ideal":10.81,"lower":9.19,"upper":12.43},
+  {"opMax":100, "budget": 18000, "t":[83,37,41,80,111,47,55,55,62,58,87,75],"ideal":7.91,"lower":6.72,"upper":9.09},
+  {"opMax":120, "budget": 22000, "t":[95,64,58,59,96,69,89,67,129,91,73,95],"ideal":8.20,"lower":6.97,"upper":9.43},
+  {"opMax":140, "budget": 26000, "t":[60,56,77,136,96,106,96,130,59,61,96,76],"ideal":7.49,"lower":6.36,"upper":8.61}
+];
+
+const NOMES = ["Preparação","Corte","Usinagem","Furação","Montagem inicial","Inspeção dimensional","Montagem final","Ajuste","Teste funcional","Acabamento","Inspeção final","Embalagem"];
+
+let faseAtual = 0;
+let operadores = [];
+let temposBaseModificados = [];
+let eventosPosto = [];
+let verificado = false;
+let concluidas = Array(FASES.length).fill(false);
+let tempoRestante = 0;
+let tempoDecorrido = 0;
+let timerInterval = null;
+let modoImprevisto = true;
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const $ = id => document.getElementById(id);
+const fase = () => FASES[faseAtual];
+
+function totalOpPosto(i) {
+  return operadores[i].jr + operadores[i].pl + operadores[i].sr;
+}
+
+function poderPosto(i) {
+  return (operadores[i].jr * OP_TYPES.jr.power) +
+         (operadores[i].pl * OP_TYPES.pl.power) +
+         (operadores[i].sr * OP_TYPES.sr.power);
+}
+
+function totalOpGeral() {
+  return operadores.reduce((s, op) => s + op.jr + op.pl + op.sr, 0);
+}
+
+function custoTotal() {
+  return operadores.reduce((s, op) => {
+    return s + (op.jr * OP_TYPES.jr.cost) + (op.pl * OP_TYPES.pl.cost) + (op.sr * OP_TYPES.sr.cost);
+  }, 0);
+}
+
+function tempoPosto(i) {
+  const p = poderPosto(i);
+  return p > 0 ? temposBaseModificados[i] / p : null;
+}
+
+function dentroDaFaixa(t) {
+  return t !== null && Number.isFinite(t) && t >= fase().lower && t <= fase().upper;
+}
+
+function fmt(n) { return n.toFixed(2) + " min"; }
+
+function iniciarTimer() {
+  clearInterval(timerInterval);
+  tempoRestante = modoImprevisto ? 120 : 90;
+  tempoDecorrido = 0;
+  $("timerDisplay").textContent = tempoRestante + "s";
+  $("triggerEvent").style.display = modoImprevisto ? "inline-block" : "none";
+  
+  timerInterval = setInterval(() => {
+    tempoRestante--;
+    tempoDecorrido++;
+    $("timerDisplay").textContent = tempoRestante + "s";
+
+    // Elemento Surpresa: a cada 45 segundos decorridos
+    if (modoImprevisto && tempoDecorrido > 0 && tempoDecorrido % 45 === 0 && tempoRestante > 0) {
+      gerarImprevisto();
+    }
+
+    if (tempoRestante <= 0) {
+      clearInterval(timerInterval);
+      $("message").className = "message error";
+      $("message").textContent = "⏰ O tempo do turno acabou! A produção começou sem o balanceamento correto.";
+      bloquearControles(true);
+    }
+  }, 1000);
+}
+
+function bloquearControles(bloquear) {
+  document.querySelectorAll("#stations button, #check, #clear, #triggerEvent").forEach(btn => btn.disabled = bloquear);
+}
+
+function desenharFases(){
+  $("phases").innerHTML = "";
+  FASES.forEach((f,i)=>{
+    const d=document.createElement("span");
+    d.className="phase"+(i===faseAtual?" active":"")+(concluidas[i]?" done":"");
+    d.textContent=`Fase ${i+1}`;
+    $("phases").appendChild(d);
+  });
+}
+
+function desenharPostos(){
+  $("stations").innerHTML="";
+  const maxOpAlc = totalOpGeral() >= fase().opMax;
+  const orcamentoEsgotado = custoTotal() >= fase().budget;
+
+  temposBaseModificados.forEach((base,i)=>{
+    const t=tempoPosto(i);
+    const ok=dentroDaFaixa(t);
+    const d=document.createElement("div");
+    d.className="station"+(verificado?(ok?" good":" bad"):"");
+
+    let eventHtml = eventosPosto[i] ? `<span class="event-badge">${eventosPosto[i]}</span>` : "";
+
+    d.innerHTML=`
+      ${eventHtml}
+      <div class="head">Posto ${String(i+1).padStart(2,"0")}</div>
+      <div class="base">${NOMES[i]} · ${base.toFixed(1)} min</div>
+      
+      <div class="controls-group">
+        ${renderOpRow(i, "jr", "Júnior", maxOpAlc, orcamentoEsgotado)}
+        ${renderOpRow(i, "pl", "Pleno", maxOpAlc, orcamentoEsgotado)}
+        ${renderOpRow(i, "sr", "Sênior", maxOpAlc, orcamentoEsgotado)}
+      </div>
+
+      <div class="time">Tempo do posto: <b>${t===null?"—":fmt(t)}</b></div>`;
+    $("stations").appendChild(d);
+  });
+
+  document.querySelectorAll("#stations button").forEach(btn=>{
+    btn.onclick=()=>alterarOperador(Number(btn.dataset.i), btn.dataset.type, Number(btn.dataset.d));
+  });
+}
+
+function renderOpRow(i, type, label, maxOp, maxBudget) {
+  const count = operadores[i][type];
+  const cost = OP_TYPES[type].cost;
+  const cantAdd = maxOp || (custoTotal() + cost > fase().budget);
+
+  return `
+    <div class="op-type-row">
+      <span>${label} (R$${cost})</span>
+      <div class="controls">
+        <button data-i="${i}" data-type="${type}" data-d="-1" ${count<=0?'disabled':''}>−</button>
+        <div class="counter">${count}</div>
+        <button data-i="${i}" data-type="${type}" data-d="1" ${cantAdd?'disabled':''}>+</button>
+      </div>
+    </div>`;
+}
+
+function alterarOperador(i, type, delta){
+  if(delta > 0 && totalOpGeral() >= fase().opMax) return;
+  if(delta > 0 && custoTotal() + OP_TYPES[type].cost > fase().budget) return;
+  if(delta < 0 && operadores[i][type] <= 0) return;
+
+  operadores[i][type] += delta;
+  verificado = false;
+  concluidas[faseAtual] = false;
+  $("next").style.display = "none";
+  $("message").className = "message";
+  $("message").textContent = "Distribuição alterada. Clique em “Verificar solução” para conferir o balanceamento.";
+  atualizar();
+}
+
+function gerarImprevisto() {
+  if(tempoRestante <= 0) return;
+  const postoRand = Math.floor(Math.random() * 12);
+  const tipos = ["quebra", "falta"];
+  const tipoRand = tipos[Math.floor(Math.random() * tipos.length)];
+
+  if(tipoRand === "quebra") {
+    temposBaseModificados[postoRand] = Math.round(temposBaseModificados[postoRand] * 1.3);
+    eventosPosto[postoRand] = "⚙️ Falha Mecânica (+30% tempo)";
+    $("message").className = "message warning";
+    $("message").textContent = `⚡ ELEMENTO SURPRESA: Ocorreu uma falha mecânica no Posto ${postoRand+1} (${NOMES[postoRand]})! O tempo aumentou.`;
+  } else {
+    let retirado = false;
+    ["sr", "pl", "jr"].forEach(t => {
+      if(!retirado && operadores[postoRand][t] > 0) {
+        operadores[postoRand][t]--;
+        retirado = true;
+      }
+    });
+    eventosPosto[postoRand] = "🤒 Falta de Operador";
+    $("message").className = "message warning";
+    $("message").textContent = `⚡ ELEMENTO SURPRESA: Um operador do Posto ${postoRand+1} (${NOMES[postoRand]}) faltou por doença! Rebalanceie a linha.`;
+  }
+  verificado = false;
+  atualizar();
+}
+
+function criarElementoSVG(tag, attrs) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+function grafico(){
+  const svg=$("chart"), W=1000,H=330,L=52,R=18,T=18,B=48;
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const vals=temposBaseModificados.map((_,i)=>tempoPosto(i)||0);
+  const max=Math.max(fase().upper*1.25,...vals,1);
+  const ch=H-T-B,cw=W-L-R,gap=cw/12,bw=gap*.62;
+  const y=v=>T+ch-(v/max)*ch;
+
+  for(let k=0;k<=5;k++){
+    const v=max*k/5,yy=y(v);
+    svg.appendChild(criarElementoSVG("line", {x1: L, x2: W-R, y1: yy, y2: yy, stroke: "#dbe2ea"}));
+    const txt = criarElementoSVG("text", {x: L-7, y: yy+4, "text-anchor": "end", "font-size": "11", fill: "#64748b"});
+    txt.textContent = v.toFixed(0);
+    svg.appendChild(txt);
+  }
+
+  svg.appendChild(criarElementoSVG("line", {x1: L, x2: L, y1: T, y2: H-B, stroke: "#94a3b8"}));
+  svg.appendChild(criarElementoSVG("line", {x1: L, x2: W-R, y1: H-B, y2: H-B, stroke: "#94a3b8"}));
+
+  svg.appendChild(criarElementoSVG("line", {x1: L, x2: W-R, y1: y(fase().ideal), y2: y(fase().ideal), stroke: "#2563eb", "stroke-width": "2.5", "stroke-dasharray": "3 4"}));
+  
+  if(verificado){
+    svg.appendChild(criarElementoSVG("line", {x1: L, x2: W-R, y1: y(fase().upper), y2: y(fase().upper), stroke: "#dc2626", "stroke-width": "2", "stroke-dasharray": "7 5"}));
+    svg.appendChild(criarElementoSVG("line", {x1: L, x2: W-R, y1: y(fase().lower), y2: y(fase().lower), stroke: "#f59e0b", "stroke-width": "2", "stroke-dasharray": "7 5"}));
+  }
+
+  temposBaseModificados.forEach((base,i)=>{
+    const x=L+i*gap+(gap-bw)/2,v=vals[i],hh=v?Math.max(2,v/max*ch):0,yy=H-B-hh;
+    const fill=verificado?(dentroDaFaixa(v)?"#16a34a":"#dc2626"):"#64748b";
+    
+    svg.appendChild(criarElementoSVG("rect", {x: x, y: yy, width: bw, height: hh, rx: "4", fill: fill}));
+    
+    const txtVal = criarElementoSVG("text", {x: x+bw/2, y: Math.max(T + 10, yy-5), "text-anchor": "middle", "font-size": "11", "font-weight": "bold"});
+    txtVal.textContent = v ? v.toFixed(1) : "—";
+    svg.appendChild(txtVal);
+
+    const txtPosto = criarElementoSVG("text", {x: x+bw/2, y: H-B+17, "text-anchor": "middle", "font-size": "10"});
+    txtPosto.textContent = `P${String(i+1).padStart(2,"0")}`;
+    svg.appendChild(txtPosto);
+
+    const txtOp = criarElementoSVG("text", {x: x+bw/2, y: H-B+31, "text-anchor": "middle", "font-size": "9", fill: "#64748b"});
+    txtOp.textContent = `${totalOpPosto(i)} op.`;
+    svg.appendChild(txtOp);
+  });
+
+  $("upLegend").style.display=verificado?"inline":"none";
+  $("loLegend").style.display=verificado?"inline":"none";
+}
+
+function atualizar(){
+  $("phaseNo").textContent=`${faseAtual+1}/${FASES.length}`;
+  $("budgetDisplay").textContent=`R$ ${fase().budget - custoTotal()}`;
+  $("ideal").textContent=fmt(fase().ideal);
+  $("phaseInfo").innerHTML=`<b>Limites:</b> Máx. ${fase().opMax} op. · Orçamento: R$ ${fase().budget} · Faixa Aprovada: <b>${fmt(fase().lower)} a ${fmt(fase().upper)}</b>`;
+  desenharFases();
+  desenharPostos();
+  grafico();
+}
+
+function verificar(){
+  if(tempoRestante <= 0) return;
+  verificado=true;
+  const problemas=[];
+  
+  operadores.forEach((_,i)=>{
+    const t=tempoPosto(i);
+    if(totalOpPosto(i)<=0) problemas.push(`P${String(i+1).padStart(2,"0")} (sem operador)`);
+    else if(t < fase().lower) problemas.push(`P${String(i+1).padStart(2,"0")} (Abaixo do limite)`);
+    else if(t > fase().upper) problemas.push(`P${String(i+1).padStart(2,"0")} (Acima do limite)`);
+  });
+
+  atualizar();
+
+  if(problemas.length===0){
+    clearInterval(timerInterval);
+    concluidas[faseAtual]=true;
+    desenharFases();
+    
+    const sobraOrcamento = (fase().budget - custoTotal()) / fase().budget;
+    let estrelas = "⭐";
+    if(sobraOrcamento >= 0.15 && tempoRestante > 15) estrelas = "⭐⭐⭐";
+    else if(sobraOrcamento >= 0.05) estrelas = "⭐⭐";
+
+    $("message").className="message success";
+    $("message").textContent=`🎯 Excelência Operacional! Fase ${faseAtual+1} Aprovada! Desempenho: ${estrelas} (Economia de R$ ${fase().budget - custoTotal()}).`;
+    $("next").style.display=faseAtual<FASES.length-1?"inline-block":"none";
+  }else{
+    concluidas[faseAtual]=false;
+    desenharFases();
+    $("message").className="message error";
+    $("message").textContent=`Ainda não balanceado. Ajuste: ${problemas.join(", ")}.`;
+    $("next").style.display="none";
+  }
+}
+
+function reiniciar(){
+  verificado=false;
+  concluidas[faseAtual]=false;
+  $("next").style.display="none";
+  bloquearControles(false);
+  
+  operadores = Array(12).fill(null).map(() => ({jr: 0, pl: 0, sr: 0}));
+  temposBaseModificados = [...fase().t];
+  eventosPosto = Array(12).fill(null);
+
+  const opInicial = Math.floor(fase().opMax / 12);
+  operadores.forEach(op => op.pl = opInicial);
+
+  $("message").className="message";
+  $("message").textContent=`Fase ${faseAtual+1} iniciada. Aloque os tipos de operadores estrategicamente dentro do orçamento.`;
+  
+  iniciarTimer();
+  atualizar();
+}
+
+document.querySelectorAll('input[name="gameMode"]').forEach(radio => {
+  radio.onchange = (e) => {
+    modoImprevisto = e.target.value === "imprevisto";
+    reiniciar();
+  };
+});
+
+$("reset").onclick=reiniciar;
+$("clear").onclick=()=>{
+  operadores=Array(12).fill(null).map(() => ({jr: 0, pl: 0, sr: 0}));
+  verificado=false;
+  concluidas[faseAtual]=false;
+  $("next").style.display="none";
+  $("message").className="message";
+  $("message").textContent="Operadores zerados. Monte sua estratégia do zero.";
+  atualizar();
+};
+$("triggerEvent").onclick=gerarImprevisto;
+$("check").onclick=verificar;
+$("next").onclick=()=>{if(faseAtual<FASES.length-1){faseAtual++;reiniciar();}};
+
+reiniciar();
+</script>
+</body>
+</html>
