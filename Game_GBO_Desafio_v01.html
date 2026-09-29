@@ -42,8 +42,8 @@
 
 <div class="mode-selector">
   <span>Modo de Jogo:</span>
-  <label><input type="radio" name="gameMode" value="imprevisto" checked> ⚡ Com Imprevistos (120s · Elemento Surpresa a cada 45s)</label>
-  <label><input type="radio" name="gameMode" value="normal"> 🎯 Sem Imprevistos (90s · Foco no Balanceamento)</label>
+  <label><input type="radio" name="gameMode" value="imprevisto" checked> ⚡ Com Imprevistos (150s · Elemento Surpresa a cada 45s)</label>
+  <label><input type="radio" name="gameMode" value="normal"> 🎯 Sem Imprevistos (120s · Foco no Balanceamento)</label>
 </div>
 
 <div id="phases" class="phases"></div>
@@ -60,7 +60,7 @@
 <h2>Indicadores & Orçamento</h2>
 <div class="stats">
 <div class="stat"><b id="phaseNo">1/8</b><span>Fase</span></div>
-<div class="stat"><b id="timerDisplay">120s</b><span>Tempo de Turno</span></div>
+<div class="stat"><b id="timerDisplay">150s</b><span>Tempo de Turno</span></div>
 <div class="stat"><b id="budgetDisplay">R$ 0</b><span>Orçamento Restante</span></div>
 <div class="stat"><b id="ideal">10,53 min</b><span>Tempo ideal fixo</span></div>
 </div>
@@ -153,7 +153,7 @@ function fmt(n) { return n.toFixed(2) + " min"; }
 
 function iniciarTimer() {
   clearInterval(timerInterval);
-  tempoRestante = modoImprevisto ? 120 : 90;
+  tempoRestante = modoImprevisto ? 150 : 120;
   tempoDecorrido = 0;
   $("timerDisplay").textContent = tempoRestante + "s";
   $("triggerEvent").style.display = modoImprevisto ? "inline-block" : "none";
