@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio SENAI: Gestão da Qualidade</title>
+<style>
+:root {
+  --senai-blue: #0046ad;
+  --senai-red: #e30613;
+  --bg-color: #eef5ff;
+  --card-bg: #ffffff;
+  --text-color: #17233c;
+  --border-color: #d7e4f8;
+  --accent-green: #2e7d32;
+  --accent-green-bg: #edf7ed;
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg-color);color:var(--text-color)}
+header{background:var(--senai-blue);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:center;gap:18px;text-align:center}
+.logo{background:var(--senai-red);color:#fff;font-weight:900;font-style:italic;font-size:26px;padding:4px 12px;border-radius:4px}
+h1{margin:0 0 4px;font-size:24px;color:#fff}
+header p{margin:0;font-size:14px;opacity:0.9}
+
+main{max-width:1200px;margin:auto;padding:18px}
+
+.controls-container{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;background:var(--card-bg);padding:12px 18px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:14px;gap:12px}
+.nav-controls{display:flex;align-items:center;gap:10px}
+.mode-selector{display:flex;align-items:center;gap:8px;font-weight:bold;color:var(--senai-blue);font-size:14px}
+.mode-selector select{padding:8px 12px;border-radius:6px;border:2px solid var(--senai-blue);background:#fff;color:var(--text-color);font-weight:bold;cursor:pointer;font-size:14px}
+
+button{background:var(--senai-red);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:bold;font-size:14px;cursor:pointer;transition:transform 0.1s}
+button:disabled{background:#ccc;cursor:not-allowed;opacity:0.6}
+button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
+.page-info{font-size:16px;font-weight:bold;color:var(--senai-blue)}
+
+.instructions{background:var(--card-bg);border-radius:10px;padding:12px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);font-size:14px}
+.instructions b{color:var(--senai-blue)}
+
+.quiz-container{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.questions-panel, .answers-panel{background:var(--card-bg);border-radius:12px;padding:16px;box-shadow:0 3px 10px rgba(0,0,0,0.1);min-height:400px}
+.questions-panel h2, .answers-panel h2{margin:0 0 10px;color:var(--senai-blue);font-size:18px}
+
+.slots{display:grid;gap:12px}
+.slot{min-height:75px;border:2px dashed #9eb2c2;border-radius:8px;padding:12px;background:#f7fafc;display:flex;flex-direction:column;justify-content:center;transition:all 0.3s ease}
+.slot.over{background:#e9f4fb;border-color:var(--senai-blue)}
+
+/* Estilização do Slot quando preenchido corretamente */
+.slot.filled{border:2px solid var(--accent-green);background:var(--accent-green-bg);box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+.slot .q-title{font-size:12px;font-weight:bold;color:var(--senai-blue);margin-bottom:4px}
+.slot .q-text{font-size:13.5px;color:var(--text-color);line-height:1.35}
+
+/* Caixa do contexto revelado pós-acerto */
+.slot .answered-box{margin-top:10px;padding:10px;background:#ffffff;border-left:4px solid var(--accent-green);border-radius:4px}
+.slot .answered-title{font-weight:bold;color:#1b5e20;font-size:13px;margin-bottom:3px;display:flex;align-items:center;gap:5px}
+.slot .answered-text{font-size:13px;color:#2c3e50;line-height:1.35}
+
+.cards{display:grid;grid-template-columns:1fr;gap:10px}
+.card{background:#f8fafc;border:2px solid var(--border-color);border-radius:9px;padding:11px;cursor:grab;display:flex;flex-direction:column;justify-content:center}
+.card:active{cursor:grabbing}
+.card.used{display:none}
+.card b{display:block;margin-bottom:4px;font-size:13px;color:var(--senai-blue)}
+.card p{margin:0;font-size:13px;color:#333;line-height:1.35}
+
+#feedback{display:none;margin:15px 0;padding:12px;border-radius:9px;text-align:center;font-weight:bold;font-size:14px}
+.success{background:#e8f7ed;color:#23653a;border:1px solid #38a65a}
+.error{background:#fff0ed;color:#9b3425;border:1px solid #e30613}
+#score{text-align:center;font-weight:bold;margin-top:14px;font-size:16px;color:var(--senai-blue)}
+
+@media(max-width:800px){
+  .quiz-container{grid-template-columns:1fr}
+  .controls-container{justify-content:center}
+  header{flex-direction:column;gap:8px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">SENAI</div>
+  <div>
+    <h1>⚙️ Desafio: Gestão da Qualidade</h1>
+    <p>Relacione os Desafios da Manufatura às suas respectivas Ferramentas e Soluções.</p>
+  </div>
+</header>
+<main>
+  <div class="controls-container">
+    <div class="nav-controls">
+      <button id="btnPrev" onclick="changePage(-1)">◀ Anterior</button>
+      <span class="page-info" id="pageIndicator">Página 1 / 2</span>
+      <button id="btnNext" onclick="changePage(1)">Próxima ▶</button>
+    </div>
+
+    <div class="mode-selector">
+      <label for="difficultySelect">🎯 Nível de Dificuldade:</label>
+      <select id="difficultySelect" onchange="toggleDifficulty()">
+        <option value="normal">🟢 Normal (Com Nome da Ferramenta)</option>
+        <option value="advanced">🔥 Avançado (Apenas Desafio/Solução - Revela após acertar)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="instructions" id="instructionsText">
+    <b>Como jogar:</b> Arraste o cartão da coluna de <b>Soluções da Qualidade</b> até o quadro com o <b>Desafio</b> correspondente.
+  </div>
+
+  <div id="feedback"></div>
+
+  <section class="quiz-container">
+    <div class="questions-panel">
+      <h2 id="moduleTitle">Desafios de Manufatura</h2>
+      <div class="slots" id="questionSlots"></div>
+    </div>
+
+    <div class="answers-panel">
+      <h2>Ferramentas / Soluções</h2>
+      <div class="cards" id="answerCards"></div>
+    </div>
+  </section>
+
+  <div id="score">Acertos na página: 0 / 10</div>
+</main>
+
+<script>
+// Banco de dados com os 20 Conceitos do Código 2 organizados para a dinâmica do Código 1
+const allQuestions = [
+  // PÁGINA 1 (Módulo A - Ferramentas e Métodos da Qualidade)
+  { id: 1, page: 1, title: "Desafio 01", q: "A fábrica tem muitas paradas, mas não se sabe quais máquinas causam 80% dos atrasos.", rTitle: "Diagrama de Pareto", r: "Ferramenta gráfica que organiza as ocorrências por ordem de frequência para identificar os poucos problemas vitais (regra 80/20)." },
+  { id: 2, page: 1, title: "Desafio 02", q: "Um novo lote de eixos apresenta defeitos e a equipe precisa analisar causas em 6 categorias (6M).", rTitle: "Diagrama de Causa e Efeito (Ishikawa)", r: "Estrutura para mapear e categorizar causas raízes potenciais em Mão de obra, Máquina, Material, Método, Medida e Meio Ambiente." },
+  { id: 3, page: 1, title: "Desafio 03", q: "Um projeto de melhoria foi implantado, mas os resultados não se mantêm; é preciso girar o ciclo de controle.", rTitle: "Ciclo PDCA", r: "Metodologia iterativa de quatro etapas (Plan, Do, Check, Act) para a melhoria contínua e padronização de processos." },
+  { id: 4, page: 1, title: "Desafio 04", q: "É necessário criar um plano de ação detalhado definindo quem, onde, quando e por que mudar o layout.", rTitle: "5W2H", r: "Ferramenta de gestão operacional que estabelece: O que, Por que, Onde, Quando, Quem, Como e Quanto custará a ação." },
+  { id: 5, page: 1, title: "Desafio 05", q: "O diâmetro de uma peça de retífica varia muito; é preciso monitorar a estabilidade do processo a cada hora.", rTitle: "Carta de Controle (CEP - Carta X-R)", r: "Gráfico estatístico utilizado para acompanhar a variabilidade e manter o processo dentro dos limites especificados." },
+  { id: 6, page: 1, title: "Desafio 06", q: "A gerência quer visualizar a distribuição das medidas de um lote para ver se seguem a curva normal.", rTitle: "Histograma", r: "Gráfico de barras que exibe a distribuição de frequência de dados quantitativos contínuos de uma amostragem." },
+  { id: 7, page: 1, title: "Desafio 07", q: "Antes de iniciar a produção de um novo eixo, a equipe deve prever falhas potenciais e seus riscos.", rTitle: "FMEA (Análise de Modos de Falha e Efeitos)", r: "Método preventivo para identificar potenciais modos de falha, avaliar seus riscos e definir ações corretivas prioritárias." },
+  { id: 8, page: 1, title: "Desafio 08", q: "Há excesso de estoque entre o torno e a fresadora; a produção deve ser puxada apenas quando necessário.", rTitle: "Sistema Kanban", r: "Sistema de sinalização visual (cartões ou painéis) para controlar e puxar o fluxo de produção e estoques em tempo real." },
+  { id: 9, page: 1, title: "Desafio 09", q: "O tempo de preparação (setup) de uma prensa é de 1 hora, atrasando o lote; o objetivo é reduzir para minutos.", rTitle: "Metodologia SMED (Troca Rápida)", r: "Técnica focada na redução drástica dos tempos de troca de ferramentas e preparação de máquinas na linha." },
+  { id: 10, page: 1, title: "Desafio 10", q: "O posto de trabalho está desorganizado, com ferramentas espalhadas, gerando perda de tempo e riscos.", rTitle: "Programa 5S (Organização e Limpeza)", r: "Metodologia para organizar, limpar, padronizar e manter a disciplina no ambiente de trabalho (Seiri, Seiton, Seiso, Seiketsu, Shitsuke)." },
+
+  // PÁGINA 2 (Módulo B - Gestão e Operações Fabris)
+  { id: 11, page: 2, title: "Desafio 11", q: "O operador caminha 50 metros entre as máquinas; é preciso otimizar o fluxo físico para reduzir movimentação.", rTitle: "Layout em Célula de Manufatura ('U')", r: "Arranjo físico de equipamentos posicionados sequencialmente para otimizar o fluxo contínuo e minimizar o deslocamento." },
+  { id: 12, page: 2, title: "Desafio 12", q: "A empresa quer reduzir desperdícios produzindo exatamente a quantidade demandada, no momento certo.", rTitle: "Just-in-Time (JIT)", r: "Filosofia de produção focada em eliminar estoques desnecessários e fornecer materiais exatamente quando requisitados." },
+  { id: 13, page: 2, title: "Desafio 13", q: "Não se sabe o tempo padrão de uma operação, dificultando o cálculo de metas e custos.", rTitle: "Cronoanálise (Estudo de Tempos e Métodos)", r: "Técnica de medição sistemática do tempo necessário para um operador qualificado realizar uma tarefa padronizada." },
+  { id: 14, page: 2, title: "Desafio 14", q: "Resíduos de óleo e cavacos estão sendo misturados; é preciso um plano para reduzir e segregar materiais.", rTitle: "Plano de Gestão de Resíduos (Princípios dos 5Rs)", r: "Conjunto de ações direcionadas ao manejo adequado, redução, reutilização e reciclagem de resíduos do processo fabril." },
+  { id: 15, page: 2, title: "Desafio 15", q: "A diretoria precisa decidir se fabrica uma engrenagem internamente ou se contrata um fornecedor externo.", rTitle: "Análise Make or Buy (Fazer ou Comprar)", r: "Avaliação estratégica de custos, capacidade produtiva e qualidade para optar pela fabricação própria ou terceirização." },
+  { id: 16, page: 2, title: "Desafio 16", q: "Para garantir que a auditoria interna seja padronizada, é preciso uma lista de verificação de itens técnicos.", rTitle: "Checklist de Auditoria", r: "Lista estruturada de verificação de itens e critérios para assegurar que processos estejam conformes com os padrões estabelecidos." },
+  { id: 17, page: 2, title: "Desafio 17", q: "As medições no setor de metrologia estão imprecisas devido a variações de temperatura e iluminação.", rTitle: "Controle das Condições Ambientais de Trabalho", r: "Adequação e monitoramento de fatores como temperatura, umidade e iluminação para garantir a exatidão das medições." },
+  { id: 18, page: 2, title: "Desafio 18", q: "É preciso organizar a agenda de produção semanal, alocando operadores e garantindo matéria-prima.", rTitle: "PCP (Planejamento e Controle da Produção)", r: "Sistema responsável por gerenciar a alocação de recursos, sequenciamento e programação do fluxo de fabricação." },
+  { id: 19, page: 2, title: "Desafio 19", q: "A fábrica quer integrar tecnologias para monitorar a linha em tempo real e aumentar a conectividade.", rTitle: "Conceitos de Indústria 4.0", r: "Integração de automação avançada, sensores IoT e análise de dados para criar fábricas inteligentes e interconectadas." },
+  { id: 20, page: 2, title: "Desafio 20", q: "Peças prontas não atendem às tolerâncias do desenho; é preciso registrar o erro e propor uma correção.", rTitle: "Tratamento de Não Conformidades", r: "Procedimento para identificar, isolar, documentar e corrigir falhas ou desvios de qualidade em produtos e processos." }
+];
+
+let currentPage = 1;
+const totalPages = 2;
+let placedCount = 0;
+let isAdvancedMode = false;
+
+function loadPage(page) {
+  currentPage = page;
+  placedCount = 0;
+  
+  document.getElementById("pageIndicator").textContent = `Página ${currentPage} / ${totalPages}`;
+  document.getElementById("btnPrev").disabled = (currentPage === 1);
+  document.getElementById("btnNext").disabled = (currentPage === totalPages);
+  
+  const currentQuestions = allQuestions.filter(item => item.page === currentPage);
+  
+  const baralhos = [
+    "Página 1: Módulo A (Ferramentas e Métodos da Qualidade)",
+    "Página 2: Módulo B (Gestão e Operações Fabris)"
+  ];
+  document.getElementById("moduleTitle").textContent = baralhos[currentPage - 1];
+
+  // Renderiza Slots de Perguntas / Desafios
+  const qSlots = document.getElementById("questionSlots");
+  qSlots.innerHTML = "";
+  currentQuestions.forEach(item => {
+    const s = document.createElement("div");
+    s.className = "slot";
+    s.dataset.id = item.id;
+    s.innerHTML = `<div class="q-title">${item.title}</div><div class="q-text">${item.q}</div>`;
+    s.addEventListener("dragover", e => { e.preventDefault(); s.classList.add("over"); });
+    s.addEventListener("dragleave", () => s.classList.remove("over"));
+    s.addEventListener("drop", e => dropItem(e, s));
+    qSlots.appendChild(s);
+  });
+
+  // Renderiza Cartões de Respostas Embaralhados
+  const aCards = document.getElementById("answerCards");
+  aCards.innerHTML = "";
+  
+  const shuffledCards = [...currentQuestions].sort(() => Math.random() - 0.5);
+  
+  shuffledCards.forEach(item => {
+    const c = document.createElement("div");
+    c.className = "card";
+    c.draggable = true;
+    c.id = "card-" + item.id;
+    
+    if (isAdvancedMode) {
+      c.innerHTML = `<p>${item.r}</p>`;
+    } else {
+      c.innerHTML = `<b>${item.rTitle}</b><p>${item.r}</p>`;
+    }
+
+    c.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text/plain", item.id);
+    });
+    aCards.appendChild(c);
+  });
+
+  updateScore();
+}
+
+function dropItem(e, slot) {
+  e.preventDefault();
+  slot.classList.remove("over");
+  
+  const id = +e.dataTransfer.getData("text/plain");
+  if (!id || slot.classList.contains("filled")) return;
+
+  if (slot.dataset.id == id) {
+    const item = allQuestions.find(x => x.id === id);
+    slot.classList.add("filled");
+    
+    // REVELAÇÃO CONTEXTUAL COMPLETA: Ferramenta + Explicação no Fundamento da Pergunta
+    slot.innerHTML += `
+      <div class="answered-box">
+        <div class="answered-title">✓ ${item.rTitle}</div>
+        <div class="answered-text">${item.r}</div>
+      </div>
+    `;
+
+    document.getElementById("card-" + id).classList.add("used");
+    placedCount++;
+    
+    showFeedback("✅ Associação correta!", "success");
+    updateScore();
+    
+    if (placedCount === 10) {
+      if(currentPage < totalPages) {
+        showFeedback("🎉 Excelente! Você concluiu esta página. Clique em 'Próxima' para continuar.", "success");
+      } else {
+        showFeedback("🏆 PARABÉNS! Você concluiu com sucesso todos os 20 desafios de Gestão da Qualidade!", "success");
+      }
+    }
+  } else {
+    showFeedback("❌ Associação incorreta. Leia atentamente o desafio e a solução técnica antes de tentar novamente.", "error");
+  }
+}
+
+function toggleDifficulty() {
+  const mode = document.getElementById("difficultySelect").value;
+  isAdvancedMode = (mode === "advanced");
+  
+  const instText = document.getElementById("instructionsText");
+  if (isAdvancedMode) {
+    instText.innerHTML = "🔥 <b>Modo Avançado Ativo:</b> Os cartões mostram <u>apenas a explicação técnica</u>. Ao acertar, o <b>Nome da Ferramenta e o Detalhamento</b> serão revelados no quadro do desafio!";
+  } else {
+    instText.innerHTML = "🟢 <b>Modo Normal Ativo:</b> Os cartões de resposta exibem o <b>Nome da Ferramenta</b> e a explicação técnica completa desde o início.";
+  }
+
+  loadPage(currentPage);
+}
+
+function changePage(delta) {
+  const newPage = currentPage + delta;
+  if (newPage >= 1 && newPage <= totalPages) {
+    loadPage(newPage);
+  }
+}
+
+function showFeedback(text, type) {
+  const f = document.getElementById("feedback");
+  f.textContent = text;
+  f.className = type;
+  f.style.display = "block";
+  clearTimeout(window.ft);
+  window.ft = setTimeout(() => f.style.display = "none", 3000);
+}
+
+function updateScore() {
+  document.getElementById("score").textContent = `Acertos na página: ${placedCount} / 10`;
+}
+
+// Inicializa o jogo na Página 1
+loadPage(1);
+</script>
+</body>
+</html>
