@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub de Desafios: Gestão Empresarial & Lean Operations</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --accent-hover: #0284c7;
+            --border-color: #334155;
+            --gold: #f59e0b;
+            --green: #10b981;
+            --purple: #a855f7;
+            --red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            max-width: 800px;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            color: var(--accent-color);
+            font-size: 2.4rem;
+            margin-bottom: 12px;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        .card-badge {
+            align-self: flex-start;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .badge-multiplayer { background-color: rgba(56, 189, 248, 0.2); color: var(--accent-color); border: 1px solid var(--accent-color); }
+        .badge-local { background-color: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+        .badge-custom { background-color: rgba(245, 158, 11, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+        .badge-quality { background-color: rgba(168, 85, 247, 0.2); color: var(--purple); border: 1px solid var(--purple); }
+        .badge-gbo { background-color: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+
+        .card h2 {
+            font-size: 1.35rem;
+            margin-bottom: 12px;
+            color: #fff;
+            line-height: 1.3;
+        }
+
+        .card p {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .card-features {
+            list-style: none;
+            margin-bottom: 25px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .card-features li {
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-play {
+            display: block;
+            text-align: center;
+            background-color: var(--accent-color);
+            color: #0f172a;
+            font-weight: bold;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-play:hover {
+            background-color: var(--accent-hover);
+            color: #fff;
+        }
+
+        footer {
+            margin-top: 50px;
+            color: #64748b;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎮 Portal de Jogos de Estratégia Empresarial</h1>
+        <p>Escolha o seu desafio, teste seus conhecimentos operacionais e lidere a sua equipe rumo à máxima eficiência técnica e gerencial.</p>
+    </header>
+
+    <main class="container">
+
+        <!-- Card 1: Gestão Empresarial Rede -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-multiplayer">🌐 Online Multiplayer (P2P)</span>
+                <h2>Desafio do CEO: A Era da Gestão & Conectividade</h2>
+                <p>Enfrente outros gestores em tempo real! Tome decisões estratégicas sobre finanças, estruturas organizacionais, PCP e revolução industrial em uma disputa P2P conectada via WebRTC.</p>
+                <ul class="card-features">
+                    <li>👥 2 a 4 Jogadores Online via Código de Sala</li>
+                    <li>📚 Inclui Guia Prático de Estudos em Modal</li>
+                    <li>⏱️ Perguntas com Timer e Graduação de Dificuldade</li>
+                </ul>
+            </div>
+            <a href="GT_Gestão_Empresarial-rede.html" class="btn-play">Iniciar Partida Online 🚀</a>
+        </article>
+
+        <!-- NOVO CARD: Jogo da Memória - Gestão da Qualidade SENAI V3 -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-quality">🧩 Memória & Ferramentas</span>
+                <h2>Jogo da Memória — Gestão da Qualidade (SENAI)</h2>
+                <p>Associe os desafios do ambiente fabril às ferramentas da qualidade correspondentes (Pareto, Ishikawa, 5S, CEP, SMED e mais). Jogue nos modos Solo ou Multiplayer em tempo real com até 4 participantes!</p>
+                <ul class="card-features">
+                    <li>🧠 20 Pares Divididos em 2 Módulos Acadêmicos</li>
+                    <li>🌐 Modo Rede P2P em Tempo Real (Até 4 Jogadores)</li>
+                    <li>⏱️ Cronômetro, Contadores e Modal Didático de Tutorial</li>
+                </ul>
+            </div>
+            <a href="Jogo_Memória-Gestao_Qualidade_V3.html" class="btn-play">Jogar Memória da Qualidade 🔍</a>
+        </article>
+
+        <!-- Card: Leiloeiro Digital (O Leilão do Tempo) -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-custom">⌛ Gestão de Tempo & Decisão</span>
+                <h2>O Leilão do Tempo — Leiloeiro Digital</h2>
+                <p>Gerencie suas fichas para arrematar lotes decisivos entre vestibular, TCC do técnico, estágio e vida pessoal. Uma simulação P2P em tempo real sobre priorização, trade-offs e custo de oportunidade.</p>
+                <ul class="card-features">
+                    <li>⚡ 3 Modalidades: Leilão Tradicional, Cego e Holandês</li>
+                    <li>🃏 Cartas de Eventos Surpresa e Bolsa de Apostas</li>
+                    <li>🌐 Conexão P2P via PeerJS entre Leiloeiro e Jogadores</li>
+                </ul>
+            </div>
+            <a href="Game_Leiloeiro_Digital_Rede.html" class="btn-play">Entrar no Leilão ⌛</a>
+        </article>
+
+        <!-- Card 2: Lean Classificação Local -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-local">🏭 Modo Local / Treinamento</span>
+                <h2>Mundo Lean: A Caça Incansável aos 8 Desperdícios</h2>
+                <p>Domine a classificação de atividades sob a ótica Lean (Agrega Valor, Necessária e Desperdício). Avalie cenários reais de chão de fábrica e elimine tudo o que não agrega valor ao cliente.</p>
+                <ul class="card-features">
+                    <li>🎯 Foco em Agregação de Valor e 8 Desperdícios</li>
+                    <li>♟️ Tabuleiro de 50 Casas com Casas Bônus/Ônus</li>
+                    <li>🧠 Banco de Questões Avançadas e Atualizadas</li>
+                </ul>
+            </div>
+            <a href="LEAN-Classificação_Agrega_Necessária_Desperdício_local.html" class="btn-play">Entrar na Fábrica Lean ⚡</a>
+        </article>
+
+        <!-- Card 3: Lean Anticonflito Personalizado -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-custom">⚔️ Modo Personalizado & Anticonflito</span>
+                <h2>Arena Lean: Duelo de Eficiência e Fluxo Contínuo</h2>
+                <p>Entre na arena competitiva com regras rigorosas de movimento e personalização total dos nomes dos jogadores. Prove quem domina VSM, Jidoka, Takt Time e Sistemas Puxados.</p>
+                <ul class="card-features">
+                    <li>✏️ Nomes dos Jogadores 100% Personalizáveis</li>
+                    <li>🛡️ Mapeamento de Casas Garantido Anticonflito</li>
+                    <li>⚡ Dinâmica Ágil de 30s por Rodada</li>
+                </ul>
+            </div>
+            <a href="LEAN-Nomes_Personalizados_Regras_Anticonflito.html" class="btn-play">Aceitar o Duelo 🎯</a>
+        </article>
+
+        <!-- Card 4: Gestão, Auditoria e Ferramentas da Qualidade -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-quality">🔍 Gestão & Auditoria</span>
+                <h2>Mestres da Qualidade: Desafio Pânico</h2>
+                <p>Jogo de tabuleiro educativo com foco em Gestão, Auditoria e Ferramentas da Qualidade. Supere desafios técnicos do 6M/PDCA ao Six Sigma/ANOVA enquanto lida com auditorias e alertas de refugo!</p>
+                <ul class="card-features">
+                    <li>🎲 Tabuleiro com 52 Casas e 4 Níveis de Dificuldade</li>
+                    <li>📋 Cartas de Auditoria Interna e Alertas de Refugo</li>
+                    <li>👥 2 a 4 Jogadores com Sons Sintéticos Nativos</li>
+                </ul>
+            </div>
+            <a href="Mestres_qualidade-Desafio_Panico.html" class="btn-play">Iniciar Auditoria 🏆</a>
+        </article>
+
+        <!-- Card 5: Balanceamento de Linha - GBO Responsivo -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-local">📊 Balanceamento Operacional</span>
+                <h2>Jogo de Balanceamento — GBO</h2>
+                <p>Equilibre a linha de produção em 12 postos de trabalho. Aloque operadores estrategicamente para manter os tempos dentro da faixa permitida de ±15% em relação ao tempo ideal fixo.</p>
+                <ul class="card-features">
+                    <li>🏭 12 Postos Industriais com Tempos Reais</li>
+                    <li>📈 Gráfico Dinâmico de Carga de Trabalho em SVG</li>
+                    <li>📱 Layout Totalmente Responsivo e Leve</li>
+                </ul>
+            </div>
+            <a href="jogo_gbo_v1.0_responsivo.html" class="btn-play">Balancear Linha ⚖️</a>
+        </article>
+
+        <!-- Card 6: Balanceamento Avançado - GBO Desafio -->
+        <article class="card">
+            <div>
+                <span class="card-badge badge-gbo">⚙️ Desafio Avançado & Imprevistos</span>
+                <h2>Jogo de Balanceamento Avançado — GBO</h2>
+                <p>Gerencie custos de mão de obra (Júnior, Pleno e Sênior), controle o orçamento da fábrica e reaja em tempo real a imprevistos operacionais como faltas e falhas mecânicas antes do fim do turno.</p>
+                <ul class="card-features">
+                    <li>👷 3 Níveis de Qualificação de Operadores (J, P, S)</li>
+                    <li>💰 Gestão Financeira de Orçamento por Fase</li>
+                    <li>⚠️ Eventos Aleatórios: Falhas Mecânicas e Faltas</li>
+                </ul>
+            </div>
+            <a href="Game_GBO_Desafio_v01.html" class="btn-play">Enfrentar o Desafio ⚠️</a>
+        </article>
+
+    </main>
+
+    <footer>
+        <p>Desenvolvido para Treinamento de Engenharia de Produção & Gestão Operacional • 2026</p>
+    </footer>
+
+</body>
+</html>
