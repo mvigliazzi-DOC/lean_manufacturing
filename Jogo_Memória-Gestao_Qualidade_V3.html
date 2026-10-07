@@ -79,4 +79,615 @@ button.btn-tutorial:hover{transform:scale(1.05)}
 
 /* Abas de Navegação entre Páginas */
 .tabs{display:flex;gap:8px;margin-bottom:16px}
-.tab-btn{flex:1;padding:14px;background:var(--border-color);border:0;border-radius:12px;font-size:15
+.tab-btn{flex:1;padding:14px;background:var(--border-color);border:0;border-radius:12px;font-size:15px;font-weight:800;color:var(--senai-blue);cursor:pointer;transition:all .3s}
+.tab-btn.active{background:var(--senai-blue);color:#fff;box-shadow:0 4px 12px rgba(0,70,173,.25)}
+
+/* Grade de cartas */
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+
+.card{border:0;background:transparent;padding:0;height:145px;cursor:pointer;perspective:900px}
+.card:disabled{cursor:not-allowed}
+.card-inner{height:100%;width:100%;position:relative;transform-style:preserve-3d;transition:transform .45s}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:10px;overflow:hidden}
+.back{background:var(--senai-blue);border:3px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,40,100,.18)}
+.back span{background:var(--senai-red);color:white;font-weight:900;font-style:italic;font-size:22px;padding:4px 12px;border-radius:4px}
+
+.front{transform:rotateY(180deg);background:#fff;border:2px solid var(--border-color);padding:8px;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;box-shadow:0 4px 12px rgba(0,40,100,.10)}
+.title{font-size:10px;letter-spacing:0.5px;font-weight:900;color:var(--senai-blue);text-align:center;margin:0 0 4px;text-transform:uppercase;flex-shrink:0}
+.info{font-size:11px;line-height:1.25;color:#34415b;word-wrap:break-word;width:100%;flex-grow:1;display:flex;align-items:center;justify-content:center}
+
+/* Cartas combinadas mantêm-se visíveis e destacadas em verde */
+.card.matched{cursor:default;pointer-events:none}
+.card.matched .front{border:2px solid var(--accent-green);background:#f0faf3}
+.card.matched .title{color:#16733a}
+
+.finish{display:none;text-align:center;background:var(--senai-blue);color:#fff;border-radius:16px;padding:20px;margin-top:18px;font-size:22px;font-weight:900}
+.finish.show{display:block}
+
+@media(max-width:900px){.board{grid-template-columns:repeat(4,1fr)}.card{height:135px}}
+@media(max-width:650px){.board{grid-template-columns:repeat(3,1fr)}.card{height:125px}}
+@media(max-width:480px){
+  header{padding:14px;flex-direction:column;align-items:flex-start}.logo{font-size:20px}h1{font-size:18px}
+  main{padding:15px 10px}
+  .board{grid-template-columns:repeat(2,1fr);gap:8px}
+  .card{height:120px}
+  .front{padding:6px}
+  .title{font-size:9px}
+  .info{font-size:10px;line-height:1.2}
+  .tab-btn{font-size:13px;padding:10px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-brand">
+    <div class="logo">SENAI</div>
+    <h1>Jogo da Memória — Gestão da Qualidade</h1>
+  </div>
+  <button id="tutorialBtn" class="btn-tutorial" type="button">❓ Como Jogar</button>
+</header>
+
+<main>
+  <section class="intro">
+    <h2>Ferramentas e Métodos da Qualidade</h2>
+    <p>Associe cada Desafio de fabricação mecânica à sua respectiva Solução/Ferramenta. Jogue solo ou multiplayer online em tempo real!</p>
+  </section>
+
+  <!-- Seleção de Modo de Jogo -->
+  <section class="mode-selection">
+    <div class="mode-options">
+      <button id="modeSoloBtn" class="mode-btn active" type="button">Jogador Solo</button>
+      <button id="modeMultiBtn" class="mode-btn" type="button">Rede (Até 4 Jogadores)</button>
+    </div>
+
+    <div id="multiplayerSetup" class="multiplayer-setup">
+      <div class="input-group">
+        <label for="playerNameInput">Seu Nome:</label>
+        <input type="text" id="playerNameInput" placeholder="Ex: João" value="Jogador 1">
+      </div>
+      
+      <div class="input-group">
+        <button id="createRoomBtn" class="btn-action" type="button">Criar Nova Sala</button>
+        <span id="roomTokenWrapper" style="display:none; align-items:center; gap:8px;">
+          Token da Sala: <span id="displayToken" class="token-display">------</span>
+        </span>
+      </div>
+
+      <div class="input-group" style="margin-top: 5px;">
+        <input type="text" id="joinTokenInput" placeholder="Digite o Token da Sala" style="text-transform:uppercase;">
+        <button id="joinRoomBtn" class="btn-action" style="background:var(--senai-blue);" type="button">Entrar em Sala</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="playersPanel" class="players-panel"></div>
+
+  <div class="controls">
+    <button id="start" class="btn-action" type="button">Iniciar jogo</button>
+    <div class="stats">
+      <div class="stat">Tempo: <span id="timer">00:00</span></div>
+      <div class="stat">Tentativas: <span id="attempts">0</span></div>
+      <div class="stat">Pares encontrados: <span id="pairs">0</span> / 20</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button id="tab1" class="tab-btn active" type="button">Página 1: Módulo A (10 pares)</button>
+    <button id="tab2" class="tab-btn" type="button">Página 2: Módulo B (10 pares)</button>
+  </div>
+
+  <div id="message" class="message">Clique em “Iniciar jogo” para começar.</div>
+  <div id="success" class="success">Você achou um par, parabéns!</div>
+  
+  <div id="board" class="board"></div>
+  
+  <div id="finish" class="finish">Parabéns! O jogo foi concluído!</div>
+</main>
+
+<!-- Modal de Tutorial -->
+<div id="tutorialModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>📖 Como Jogar</h3>
+      <button id="closeTutorialBtn" class="modal-close" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <h4>🎯 Objetivo</h4>
+      <p>Relacionar cada <b>Desafio</b> do ambiente fabril à sua <b>Solução/Ferramenta da Qualidade</b>. O jogo possui 20 pares distribuídos em 2 páginas.</p>
+
+      <h4>🃏 Como Funciona</h4>
+      <ul>
+        <li>Clique em duas cartas para revelá-las.</li>
+        <li>Se as duas cartas formarem um par (Desafio + Solução correspondente), elas ficarão abertas e destacadas em verde.</li>
+        <li>Se não combinarem, as cartas voltarão a virar para baixo.</li>
+      </ul>
+
+      <h4>🎮 Modo Solo</h4>
+      <p>Desafie-se a encontrar todos os 20 pares com o menor número de tentativas e no menor tempo possível.</p>
+
+      <h4>🌐 Modo Rede (Multiplayer)</h4>
+      <ul>
+        <li><b>Criar Sala:</b> Clique em "Criar Nova Sala" e compartilhe o <b>Token</b> gerado com até 3 amigos.</li>
+        <li><b>Entrar em Sala:</b> Cole o Token fornecido pelo Host e clique em "Entrar em Sala".</li>
+        <li><b>Regras de Turno:</b> Jogadores jogam à vez. Ao acertar um par, ganha +10 pontos e joga novamente. Quem errar passa o turno!</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // Todos os 20 Pares do Código 1 Divididos em 2 Páginas de 10 Pares Cada
+  var page1Concepts = [
+    { id: 1, desafio: "A fábrica tem muitas paradas, mas não se sabe quais máquinas causam 80% dos atrasos.", solucao: "Diagrama de Pareto" },
+    { id: 2, desafio: "Um novo lote de eixos apresenta defeitos e a equipe precisa analisar causas em 6 categorias (6M).", solucao: "Diagrama de Causa e Efeito (Ishikawa)" },
+    { id: 3, desafio: "Um projeto de melhoria foi implantado, mas os resultados não se mantêm; é preciso girar o ciclo de controle.", solucao: "Ciclo PDCA" },
+    { id: 4, desafio: "É necessário criar um plano de ação detalhado definindo quem, onde, quando e por que mudar o layout.", solucao: "5W2H" },
+    { id: 5, desafio: "O diâmetro de uma peça de retífica varia muito; é preciso monitorar a estabilidade do processo a cada hora.", solucao: "Carta de Controle (CEP - Carta X-R)" },
+    { id: 6, desafio: "A gerência quer visualizar a distribuição das medidas de um lote para ver se seguem a curva normal.", solucao: "Histograma" },
+    { id: 7, desafio: "Antes de iniciar a produção de um novo eixo, a equipe deve prever falhas potenciais e seus riscos.", solucao: "FMEA (Análise de Modos de Falha e Efeitos)" },
+    { id: 8, desafio: "Há excesso de estoque entre o torno e a fresadora; a produção deve ser puxada apenas quando necessário.", solucao: "Sistema Kanban" },
+    { id: 9, desafio: "O tempo de preparação (setup) de uma prensa é de 1 hora, atrasando o lote; o objetivo é reduzir para minutos.", solucao: "Metodologia SMED (Troca Rápida)" },
+    { id: 10, desafio: "O posto de trabalho está desorganizado, com ferramentas espalhadas, gerando perda de tempo e riscos.", solucao: "Programa 5S (Organização e Limpeza)" }
+  ];
+
+  var page2Concepts = [
+    { id: 11, desafio: "O operador caminha 50 metros entre as máquinas; é preciso otimizar o fluxo físico para reduzir movimentação.", solucao: "Layout em Célula de Manufatura ('U')" },
+    { id: 12, desafio: "A empresa quer reduzir desperdícios produzindo exatamente a quantidade demandada, no momento certo.", solucao: "Just-in-Time (JIT)" },
+    { id: 13, desafio: "Não se sabe o tempo padrão de uma operação, dificultando o cálculo de metas e custos.", solucao: "Cronoanálise (Estudo de Tempos e Métodos)" },
+    { id: 14, desafio: "Resíduos de óleo e cavacos estão sendo misturados; é preciso um plano para reduzir e segregar materiais.", solucao: "Plano de Gestão de Resíduos (Princípios dos 5Rs)" },
+    { id: 15, desafio: "A diretoria precisa decidir se fabrica uma engrenagem internamente ou se contrata um fornecedor externo.", solucao: "Análise Make or Buy (Fazer ou Comprar)" },
+    { id: 16, desafio: "Para garantir que a auditoria interna seja padronizada, é preciso uma lista de verificação de itens técnicos.", solucao: "Checklist de Auditoria" },
+    { id: 17, desafio: "As medições no setor de metrologia estão imprecisas devido a variações de temperatura e iluminação.", solucao: "Controle das Condições Ambientais de Trabalho" },
+    { id: 18, desafio: "É preciso organizar a agenda de produção semanal, alocando operadores e garantindo matéria-prima.", solucao: "PCP (Planejamento e Controle da Produção)" },
+    { id: 19, desafio: "A fábrica quer integrar tecnologias para monitorar a linha em tempo real e aumentar a conectividade.", solucao: "Conceitos de Indústria 4.0" },
+    { id: 20, desafio: "Peças prontas não atendem às tolerâncias do desenho; é preciso registrar o erro e propor uma correção.", solucao: "Tratamento de Não Conformidades" }
+  ];
+
+  var board = document.getElementById("board");
+  var start = document.getElementById("start");
+  var attemptsEl = document.getElementById("attempts");
+  var pairsEl = document.getElementById("pairs");
+  var timerEl = document.getElementById("timer");
+  var message = document.getElementById("message");
+  var success = document.getElementById("success");
+  var finish = document.getElementById("finish");
+  var tab1 = document.getElementById("tab1");
+  var tab2 = document.getElementById("tab2");
+
+  var tutorialBtn = document.getElementById("tutorialBtn");
+  var tutorialModal = document.getElementById("tutorialModal");
+  var closeTutorialBtn = document.getElementById("closeTutorialBtn");
+
+  var modeSoloBtn = document.getElementById("modeSoloBtn");
+  var modeMultiBtn = document.getElementById("modeMultiBtn");
+  var multiplayerSetup = document.getElementById("multiplayerSetup");
+  var playerNameInput = document.getElementById("playerNameInput");
+  var createRoomBtn = document.getElementById("createRoomBtn");
+  var joinRoomBtn = document.getElementById("joinRoomBtn");
+  var joinTokenInput = document.getElementById("joinTokenInput");
+  var roomTokenWrapper = document.getElementById("roomTokenWrapper");
+  var displayToken = document.getElementById("displayToken");
+  var playersPanel = document.getElementById("playersPanel");
+
+  var isMultiplayer = false;
+  var peer = null;
+  var connections = [];
+  var isHost = false;
+  var myPlayerId = "";
+  var players = [];
+  var currentTurnIndex = 0;
+
+  var currentPage = 1;
+  var first = null;
+  var second = null;
+  var attempts = 0;
+  var pairs = 0;
+  var playing = false;
+  var waitingForMatchRemoval = false;
+  var matchTimeoutId = null;
+
+  var secondsElapsed = 0;
+  var timerInterval = null;
+
+  var deckDataPage1 = [];
+  var deckDataPage2 = [];
+  var deckPage1 = [];
+  var deckPage2 = [];
+
+  function generateToken(){
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+  }
+
+  function formatTime(sec){
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+  }
+
+  function startTimer(){
+    stopTimer();
+    secondsElapsed = 0;
+    timerEl.textContent = "00:00";
+    timerInterval = setInterval(function(){
+      secondsElapsed++;
+      timerEl.textContent = formatTime(secondsElapsed);
+    }, 1000);
+  }
+
+  function stopTimer(){
+    if(timerInterval){
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  function shuffle(list){
+    var a = list.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j=Math.floor(Math.random()*(i+1));
+      var tmp=a[i]; a[i]=a[j]; a[j]=tmp;
+    }
+    return a;
+  }
+
+  function createRawDeck(concepts){
+    var deck = [];
+    for(var i=0;i<concepts.length;i++){
+      deck.push({ pairId: concepts[i].id, cardType: "Desafio", text: concepts[i].desafio });
+      deck.push({ pairId: concepts[i].id, cardType: "Solução", text: concepts[i].solucao });
+    }
+    return deck;
+  }
+
+  function makeCard(item, index, page){
+    var card = document.createElement("button");
+    card.type = "button";
+    card.className = "card";
+    card.disabled = !playing;
+    card.dataset.pairId = item.pairId;
+    card.dataset.type = item.cardType;
+    card.dataset.index = index;
+    card.dataset.page = page;
+
+    card.innerHTML =
+      '<div class="card-inner">' +
+        '<div class="face back"><span>SENAI</span></div>' +
+        '<div class="face front">' +
+          '<div class="title">'+item.cardType+'</div>' +
+          '<div class="info">'+item.text+'</div>' +
+        '</div>' +
+      '</div>';
+
+    card.addEventListener("click", function(){
+      if(isMultiplayer && players[currentTurnIndex] && players[currentTurnIndex].id !== myPlayerId){
+        return;
+      }
+      handleCardClick(card, true);
+    });
+    return card;
+  }
+
+  function renderCurrentPage(){
+    board.innerHTML = "";
+    var currentDeck = (currentPage === 1) ? deckPage1 : deckPage2;
+    for(var j=0; j<currentDeck.length; j++){
+      board.appendChild(currentDeck[j]);
+    }
+  }
+
+  function updatePlayersUI(){
+    if(!isMultiplayer){
+      playersPanel.classList.remove("show");
+      return;
+    }
+    playersPanel.classList.add("show");
+    playersPanel.innerHTML = "";
+    players.forEach(function(p, idx){
+      var div = document.createElement("div");
+      div.className = "player-card" + (idx === currentTurnIndex ? " active-turn" : "");
+      div.innerHTML = '<span>' + p.name + (p.id === myPlayerId ? ' (Você)' : '') + '</span><span class="score">' + p.score + ' pts</span>';
+      playersPanel.appendChild(div);
+    });
+  }
+
+  function broadcastData(data){
+    connections.forEach(function(conn){
+      if(conn && conn.open) conn.send(data);
+    });
+  }
+
+  function setupPeerHost(token){
+    peer = new Peer("SENAI-QUAL-" + token);
+    peer.on("open", function(id){
+      myPlayerId = id;
+      isHost = true;
+      displayToken.textContent = token;
+      roomTokenWrapper.style.display = "inline-flex";
+      players = [{ id: myPlayerId, name: playerNameInput.value || "Host", score: 0 }];
+      updatePlayersUI();
+      message.textContent = "Sala criada com sucesso! Compartilhe o token com seus amigos...";
+    });
+
+    peer.on("connection", function(conn){
+      if(players.length >= 4){
+        conn.close();
+        return;
+      }
+      connections.push(conn);
+      conn.on("data", function(data){
+        handleNetworkData(data, conn);
+      });
+      conn.on("close", function(){
+        players = players.filter(function(p){ return p.id !== conn.peer; });
+        broadcastData({ type: "SYNC_PLAYERS", players: players, turn: currentTurnIndex });
+        updatePlayersUI();
+      });
+    });
+  }
+
+  function setupPeerClient(token){
+    peer = new Peer();
+    peer.on("open", function(id){
+      myPlayerId = id;
+      isHost = false;
+      var conn = peer.connect("SENAI-QUAL-" + token);
+      connections = [conn];
+
+      conn.on("open", function(){
+        conn.send({ type: "JOIN_REQUEST", name: playerNameInput.value || "Jogador" });
+        message.textContent = "Conectado à sala! Aguardando o Host iniciar...";
+      });
+
+      conn.on("data", function(data){
+        handleNetworkData(data, conn);
+      });
+    });
+  }
+
+  function handleNetworkData(data, conn){
+    if(isHost && data.type === "JOIN_REQUEST"){
+      players.push({ id: conn.peer, name: data.name, score: 0 });
+      broadcastData({ type: "SYNC_PLAYERS", players: players, turn: currentTurnIndex });
+      updatePlayersUI();
+      return;
+    }
+
+    if(data.type === "SYNC_PLAYERS"){
+      players = data.players;
+      currentTurnIndex = data.turn;
+      updatePlayersUI();
+    } else if(data.type === "START_GAME"){
+      deckDataPage1 = data.deck1;
+      deckDataPage2 = data.deck2;
+      deckPage1 = deckDataPage1.map(function(item, idx){ return makeCard(item, idx, 1); });
+      deckPage2 = deckDataPage2.map(function(item, idx){ return makeCard(item, idx, 2); });
+      executeStartGame();
+    } else if(data.type === "CARD_CLICK"){
+      var deck = data.page === 1 ? deckPage1 : deckPage2;
+      var targetCard = deck[data.index];
+      if(data.page !== currentPage){
+        switchPage(data.page, false);
+      }
+      handleCardClick(targetCard, false);
+    } else if(data.type === "SWITCH_PAGE"){
+      switchPage(data.page, false);
+    }
+  }
+
+  function handleCardClick(card, shouldBroadcast){
+    if(!playing || waitingForMatchRemoval) return;
+    if(!card || card.classList.contains("matched") || card.classList.contains("flipped")) return;
+
+    if(shouldBroadcast && isMultiplayer){
+      broadcastData({
+        type: "CARD_CLICK",
+        page: parseInt(card.dataset.page),
+        index: parseInt(card.dataset.index)
+      });
+    }
+
+    if(first !== null && second !== null){
+      if(!first.classList.contains("matched")) first.classList.remove("flipped");
+      if(!second.classList.contains("matched")) second.classList.remove("flipped");
+      first = null;
+      second = null;
+      success.classList.remove("show");
+    }
+
+    card.classList.add("flipped");
+
+    if(first === null){
+      first = card;
+      return;
+    }
+
+    second = card;
+    attempts++;
+    attemptsEl.textContent = String(attempts);
+
+    if(first.dataset.pairId === second.dataset.pairId && first.dataset.type !== second.dataset.type){
+      var a = first;
+      var b = second;
+      pairs++;
+      pairsEl.textContent = String(pairs);
+      success.classList.add("show");
+      message.textContent = "Você achou um par, parabéns!";
+      waitingForMatchRemoval = true;
+
+      if(isMultiplayer){
+        players[currentTurnIndex].score += 10;
+        updatePlayersUI();
+      }
+
+      matchTimeoutId = setTimeout(function(){
+        a.classList.add("matched");
+        b.classList.add("matched");
+        a.disabled = true;
+        b.disabled = true;
+
+        first = null;
+        second = null;
+        waitingForMatchRemoval = false;
+        success.classList.remove("show");
+
+        if(pairs === 20){
+          playing = false;
+          stopTimer();
+          finish.classList.add("show");
+          if(isMultiplayer){
+            var winner = players.reduce(function(prev, current){ return (prev.score > current.score) ? prev : current; });
+            finish.textContent = "🏆 Fim de jogo! Vencedor: " + winner.name + " com " + winner.score + " pontos em " + formatTime(secondsElapsed) + "!";
+          } else {
+            finish.textContent = "🎉 Parabéns! Você concluiu todos os 20 pares em " + formatTime(secondsElapsed) + " com " + attempts + " tentativas!";
+          }
+          message.textContent = "";
+        }else{
+          message.textContent = isMultiplayer ? "Par encontrado! " + players[currentTurnIndex].name + " joga novamente (+10 pts)." : "Continue procurando os pares.";
+        }
+      }, 800);
+
+    }else{
+      message.textContent = "Não é um par.";
+      if(isMultiplayer){
+        currentTurnIndex = (currentTurnIndex + 1) % players.length;
+        updatePlayersUI();
+        if(isHost){
+          broadcastData({ type: "SYNC_PLAYERS", players: players, turn: currentTurnIndex });
+        }
+      }
+    }
+  }
+
+  function switchPage(pageNumber, shouldBroadcast){
+    if(currentPage === pageNumber) return;
+
+    if(shouldBroadcast && isMultiplayer){
+      broadcastData({ type: "SWITCH_PAGE", page: pageNumber });
+    }
+
+    if(matchTimeoutId){ clearTimeout(matchTimeoutId); matchTimeoutId = null; }
+    waitingForMatchRemoval = false;
+    success.classList.remove("show");
+
+    if(first !== null && second !== null){
+      if(!first.classList.contains("matched")) first.classList.remove("flipped");
+      if(!second.classList.contains("matched")) second.classList.remove("flipped");
+      first = null;
+      second = null;
+    } else if(first !== null){
+      if(!first.classList.contains("matched")) first.classList.remove("flipped");
+      first = null;
+    }
+
+    currentPage = pageNumber;
+    if(currentPage === 1){
+      tab1.classList.add("active");
+      tab2.classList.remove("active");
+    } else {
+      tab2.classList.add("active");
+      tab1.classList.remove("active");
+    }
+
+    renderCurrentPage();
+  }
+
+  function initDecksLocal(){
+    deckDataPage1 = shuffle(createRawDeck(page1Concepts));
+    deckDataPage2 = shuffle(createRawDeck(page2Concepts));
+
+    deckPage1 = deckDataPage1.map(function(item, idx){ return makeCard(item, idx, 1); });
+    deckPage2 = deckDataPage2.map(function(item, idx){ return makeCard(item, idx, 2); });
+  }
+
+  function executeStartGame(){
+    if(matchTimeoutId){ clearTimeout(matchTimeoutId); }
+    stopTimer();
+
+    first = null;
+    second = null;
+    attempts = 0;
+    pairs = 0;
+    playing = true;
+    waitingForMatchRemoval = false;
+
+    attemptsEl.textContent = "0";
+    pairsEl.textContent = "0";
+    message.textContent = isMultiplayer ? "Vez de: " + players[currentTurnIndex].name : "Encontre os pares da página atual.";
+    success.classList.remove("show");
+    finish.classList.remove("show");
+    start.textContent = "Reiniciar jogo";
+
+    var allCards = deckPage1.concat(deckPage2);
+    allCards.forEach(function(c){ c.disabled = false; });
+
+    renderCurrentPage();
+    startTimer();
+  }
+
+  function startGame(){
+    if(isMultiplayer){
+      if(!isHost){
+        alert("Apenas o Host da sala pode iniciar o jogo.");
+        return;
+      }
+      initDecksLocal();
+      broadcastData({
+        type: "START_GAME",
+        deck1: deckDataPage1,
+        deck2: deckDataPage2
+      });
+      executeStartGame();
+    } else {
+      initDecksLocal();
+      executeStartGame();
+    }
+  }
+
+  /* Eventos do Modal */
+  tutorialBtn.addEventListener("click", function(){ tutorialModal.classList.add("show"); });
+  closeTutorialBtn.addEventListener("click", function(){ tutorialModal.classList.remove("show"); });
+  tutorialModal.addEventListener("click", function(e){ if(e.target === tutorialModal){ tutorialModal.classList.remove("show"); } });
+
+  modeSoloBtn.addEventListener("click", function(){
+    isMultiplayer = false;
+    modeSoloBtn.classList.add("active");
+    modeMultiBtn.classList.remove("active");
+    multiplayerSetup.classList.remove("show");
+    playersPanel.classList.remove("show");
+  });
+
+  modeMultiBtn.addEventListener("click", function(){
+    isMultiplayer = true;
+    modeMultiBtn.classList.add("active");
+    modeSoloBtn.classList.remove("active");
+    multiplayerSetup.classList.add("show");
+  });
+
+  createRoomBtn.addEventListener("click", function(){
+    var token = generateToken();
+    setupPeerHost(token);
+  });
+
+  joinRoomBtn.addEventListener("click", function(){
+    var token = joinTokenInput.value.trim().toUpperCase();
+    if(!token){
+      alert("Por favor, insira um Token válido.");
+      return;
+    }
+    setupPeerClient(token);
+  });
+
+  tab1.addEventListener("click", function(){ switchPage(1, true); });
+  tab2.addEventListener("click", function(){ switchPage(2, true); });
+  start.addEventListener("click", startGame);
+
+  initDecksLocal();
+  renderCurrentPage();
+})();
+</script>
+</body>
+</html>
