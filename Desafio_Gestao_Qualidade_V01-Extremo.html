@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio SENAI: Gestão da Qualidade - Modo Extremo em Rede</title>
+
+<!-- Importação PeerJS para Conexão P2P em Tempo Real -->
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+<style>
+:root {
+  --senai-blue: #0046ad;
+  --senai-red: #e30613;
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --text-color: #f8fafc;
+  --border-color: #334155;
+  --accent-green: #10b981;
+  --accent-green-bg: rgba(16, 185, 129, 0.2);
+  --gold: #f59e0b;
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--bg-color);color:var(--text-color)}
+header{background:var(--senai-blue);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:center;gap:18px;text-align:center}
+.logo{background:var(--senai-red);color:#fff;font-weight:900;font-style:italic;font-size:26px;padding:4px 12px;border-radius:4px}
+h1{margin:0 0 4px;font-size:24px;color:#fff}
+
+main{max-width:1200px;margin:auto;padding:18px}
+
+.network-panel {
+  background: var(--card-bg);
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 2px solid var(--senai-blue);
+  margin-bottom: 16px;
+}
+.network-controls { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
+.network-inputs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.network-inputs input { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: #0f172a; color: #fff; }
+
+.controls-container{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;background:var(--card-bg);padding:12px 18px;border-radius:10px;margin-bottom:14px;gap:12px}
+.nav-controls{display:flex;align-items:center;gap:10px}
+
+.hud-panel { display: flex; gap: 16px; background: #0f172a; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-color); font-weight: bold; }
+.hud-item.timer { color: var(--senai-red); }
+.hud-item.score { color: var(--accent-green); }
+
+button{background:var(--senai-red);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:bold;cursor:pointer;transition:transform 0.1s}
+button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
+button:disabled{opacity:0.5;cursor:not-allowed}
+.btn-green{background:var(--accent-green)}
+.btn-blue{background:var(--senai-blue)}
+
+.leaderboard-panel { background: var(--card-bg); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; }
+.player-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.player-card { background: #0f172a; border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; font-size: 13px; }
+.player-card.is-me { border-color: var(--senai-blue); background: #1e3a8a; }
+
+/* Efeito de Ataque Recebido */
+.cards.blackout { filter: blur(8px); pointer-events: none; opacity: 0.3; }
+
+.quiz-container{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.questions-panel, .answers-panel{background:var(--card-bg);border-radius:12px;padding:16px;min-height:400px}
+.questions-panel h2, .answers-panel h2{margin:0 0 10px;color:var(--senai-blue);font-size:18px}
+
+.slots{display:grid;gap:12px}
+.slot{min-height:75px;border:2px dashed #475569;border-radius:8px;padding:12px;background:#0f172a;display:flex;flex-direction:column;justify-content:center;transition:all 0.3s ease}
+.slot.over{background:#1e3a8a;border-color:var(--senai-blue)}
+.slot.filled{border:2px solid var(--accent-green);background:var(--accent-green-bg)}
+
+.cards{display:grid;grid-template-columns:1fr;gap:10px}
+.card{background:#0f172a;border:2px solid var(--border-color);border-radius:9px;padding:11px;cursor:grab;display:flex;flex-direction:column;justify-content:center}
+.card.used{display:none}
+.card b{display:block;margin-bottom:4px;color:#38bdf8}
+
+#feedback{display:none;margin:15px 0;padding:12px;border-radius:9px;text-align:center;font-weight:bold}
+.success{background:#064e3b;color:#34d399;border:1px solid #059669}
+.error{background:#7f1d1d;color:#fca5a5;border:1px solid #dc2626}
+
+#attackBtn { background: var(--gold); color: #000; font-weight: bold; margin-left: 10px; display: none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">SENAI</div>
+  <div>
+    <h1>⚙️ Desafio: Gestão da Qualidade em Rede (Modo Extremo)</h1>
+    <p>Competição em Tempo Real com Takt Time e Ações Táticas de Chão de Fábrica</p>
+  </div>
+</header>
+<main>
+
+  <section class="network-panel">
+    <div class="network-controls">
+      <div class="network-inputs">
+        <label><b>Seu Nome:</b></label>
+        <input type="text" id="playerName" value="Operador 1" onchange="saveIdentity()">
+        <button class="btn-blue" onclick="createRoom()">🌐 Criar Sala</button>
+        <input type="text" id="roomCodeInput" placeholder="Código" style="width:100px; text-transform:uppercase;">
+        <button class="btn-green" onclick="joinRoom()">🔗 Entrar</button>
+      </div>
+      <div id="roomInfo" style="font-weight:bold; color:#38bdf8;">Modo Solo Offline</div>
+    </div>
+  </section>
+
+  <section class="leaderboard-panel">
+    <h3>📊 Status da Linha de Produção (Tempo Real)
+      <button id="attackBtn" onclick="launchAttack()">⚡ Enviar Apagão no Líder!</button>
+    </h3>
+    <div class="player-list" id="playerList"></div>
+  </section>
+
+  <div class="controls-container">
+    <div class="nav-controls">
+      <button id="btnPrev" onclick="changePage(-1)">◀ Anterior</button>
+      <span class="page-info" id="pageIndicator">Página 1 / 2</span>
+      <button id="btnNext" onclick="changePage(1)">Próxima ▶</button>
+    </div>
+
+    <div class="hud-panel">
+      <div class="hud-item timer">⏱️ Takt Time: <span id="taktDisplay">15s</span></div>
+      <div class="hud-item score">🏆 Pontos: <span id="scoreDisplay">0</span></div>
+    </div>
+  </div>
+
+  <div id="feedback"></div>
+
+  <section class="quiz-container">
+    <div class="questions-panel">
+      <h2 id="moduleTitle">Desafios de Manufatura</h2>
+      <div class="slots" id="questionSlots"></div>
+    </div>
+
+    <div class="answers-panel">
+      <h2>Ferramentas / Soluções</h2>
+      <div class="cards" id="answerCards"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const allQuestions = [
+  { id: 1, page: 1, title: "Desafio 01", q: "A fábrica tem muitas paradas, mas não se sabe quais máquinas causam 80% dos atrasos.", rTitle: "Diagrama de Pareto", r: "Ferramenta gráfica para identificar os poucos problemas vitais (regra 80/20)." },
+  { id: 2, page: 1, title: "Desafio 02", q: "Um novo lote apresenta defeitos e a equipe precisa analisar causas em 6 categorias (6M).", rTitle: "Diagrama de Causa e Efeito (Ishikawa)", r: "Estrutura para mapear causas em Mão de obra, Máquina, Material, Método, Medida e Meio Ambiente." },
+  { id: 3, page: 1, title: "Desafio 03", q: "Um projeto foi implantado, mas os resultados não se mantêm; é preciso girar o ciclo de controle.", rTitle: "Ciclo PDCA", r: "Metodologia iterativa de 4 etapas (Plan, Do, Check, Act) para melhoria contínua." },
+  { id: 4, page: 1, title: "Desafio 04", q: "Criar um plano de ação detalhado definindo quem, onde, quando e por que mudar o layout.", rTitle: "5W2H", r: "Ferramenta operacional: O que, Por que, Onde, Quando, Quem, Como e Quanto custará." },
+  { id: 5, page: 1, title: "Desafio 05", q: "O diâmetro varia muito; é preciso monitorar a estabilidade do processo a cada hora.", rTitle: "Carta de Controle (CEP)", r: "Gráfico estatístico para acompanhar a variabilidade dentro dos limites especificados." },
+  { id: 6, page: 1, title: "Desafio 06", q: "Visualizar a distribuição das medidas de um lote para ver se seguem a curva normal.", rTitle: "Histograma", r: "Gráfico de barras da distribuição de frequência de dados quantitativos contínuos." },
+  { id: 7, page: 1, title: "Desafio 07", q: "Antes de iniciar a produção, a equipe deve prever falhas potenciais e seus riscos.", rTitle: "FMEA", r: "Método preventivo para identificar potenciais modos de falha e avaliar seus riscos." },
+  { id: 8, page: 1, title: "Desafio 08", q: "Excesso de estoque no processo; a produção deve ser puxada apenas quando necessário.", rTitle: "Sistema Kanban", r: "Sinalização visual (cartões ou painéis) para controlar e puxar o fluxo de produção." },
+  { id: 9, page: 1, title: "Desafio 09", q: "O tempo de setup é de 1 hora, atrasando o lote; o objetivo é reduzir para minutos.", rTitle: "Metodologia SMED", r: "Técnica focada na redução drástica dos tempos de troca de ferramentas e preparação." },
+  { id: 10, page: 1, title: "Desafio 10", q: "Posto de trabalho desorganizado com ferramentas espalhadas gerando perda de tempo.", rTitle: "Programa 5S", r: "Metodologia para organizar, limpar, padronizar e manter a disciplina (Seiri a Shitsuke)." }
+];
+
+let currentPage = 1;
+let placedCount = 0;
+let totalScore = 0;
+let comboStreak = 1;
+let taktTime = 15;
+let taktInterval = null;
+let filledQuestionIds = [];
+
+// Persistência
+let myPlayerId = localStorage.getItem("qual_playerId") || "OP-" + Math.random().toString(36).substring(2,7).toUpperCase();
+localStorage.setItem("qual_playerId", myPlayerId);
+
+function saveIdentity() { localStorage.setItem("qual_playerName", document.getElementById("playerName").value); }
+
+// P2P REDE
+let peer = null, connections = [], hostConn = null, isHost = false, playersData = {};
+
+function initMyPlayerData() {
+  playersData[myPlayerId] = {
+    name: document.getElementById("playerName").value || "Operador",
+    score: totalScore,
+    progress: `${placedCount}/10`,
+    isBlackout: false
+  };
+}
+
+function createRoom() {
+  initMyPlayerData();
+  isHost = true;
+  const roomCode = "QUAL-" + Math.floor(1000 + Math.random() * 9000);
+  peer = new Peer(roomCode);
+  peer.on('open', id => {
+    document.getElementById("roomInfo").innerHTML = `🔑 Sala: <b>${id}</b>`;
+    updateLeaderboard();
+  });
+  peer.on('connection', conn => {
+    connections.push(conn);
+    conn.on('data', data => handleData(data));
+  });
+}
+
+function joinRoom() {
+  initMyPlayerData();
+  isHost = false;
+  const roomCode = document.getElementById("roomCodeInput").value.trim().toUpperCase();
+  peer = new Peer();
+  peer.on('open', () => {
+    hostConn = peer.connect(roomCode);
+    hostConn.on('open', () => {
+      document.getElementById("roomInfo").innerHTML = `✅ Conectado: <b>${roomCode}</b>`;
+      hostConn.send({ type: 'JOIN', playerId: myPlayerId, playerData: playersData[myPlayerId] });
+    });
+    hostConn.on('data', data => handleData(data));
+  });
+}
+
+function handleData(data) {
+  if (data.type === 'JOIN' && isHost) { playersData[data.playerId] = data.playerData; broadcast(); }
+  else if (data.type === 'UPDATE') { playersData = data.players; updateLeaderboard(); }
+  else if (data.type === 'ATTACK' && data.targetId === myPlayerId) {
+    document.getElementById("answerCards").classList.add("blackout");
+    showFeedback("⚠️ APAGÃO! Um concorrente parou sua iluminação por 6 segundos!", "error");
+    setTimeout(() => document.getElementById("answerCards").classList.remove("blackout"), 6000);
+  }
+}
+
+function broadcast() {
+  updateLeaderboard();
+  connections.forEach(c => c.open && c.send({ type: 'UPDATE', players: playersData }));
+}
+
+function sendProgress() {
+  playersData[myPlayerId] = { name: document.getElementById("playerName").value, score: totalScore, progress: `${placedCount}/10` };
+  if (isHost) broadcast();
+  else if (hostConn && hostConn.open) hostConn.send({ type: 'JOIN', playerId: myPlayerId, playerData: playersData[myPlayerId] });
+  
+  if (comboStreak >= 3) document.getElementById("attackBtn").style.display = "inline-block";
+}
+
+function launchAttack() {
+  document.getElementById("attackBtn").style.display = "none";
+  comboStreak = 1;
+  const otherIds = Object.keys(playersData).filter(id => id !== myPlayerId);
+  if (otherIds.length > 0) {
+    const target = otherIds[0];
+    if (isHost) broadcastAttack(target);
+    else if (hostConn) hostConn.send({ type: 'ATTACK_REQ', targetId: target });
+    showFeedback("⚡ Ataque enviado com sucesso!", "success");
+  }
+}
+
+function broadcastAttack(targetId) {
+  connections.forEach(c => c.open && c.send({ type: 'ATTACK', targetId }));
+}
+
+function updateLeaderboard() {
+  const el = document.getElementById("playerList");
+  el.innerHTML = "";
+  Object.keys(playersData).forEach(id => {
+    const p = playersData[id];
+    el.innerHTML += `<div class="player-card ${id===myPlayerId?'is-me':''}"><b>${p.name}</b><br>🎯 Acertos: ${p.progress} | 🏆 Pts: ${p.score}</div>`;
+  });
+}
+
+// TAKT TIME E JOGO
+function startTaktTimer() {
+  clearInterval(taktInterval);
+  taktTime = 15;
+  document.getElementById("taktDisplay").textContent = taktTime + "s";
+  taktInterval = setInterval(() => {
+    taktTime--;
+    document.getElementById("taktDisplay").textContent = taktTime + "s";
+    if (taktTime <= 0) {
+      taktTime = 15;
+      totalScore = Math.max(0, totalScore - 30);
+      comboStreak = 1;
+      showFeedback("⏰ TAKT TIME ESTOURADO! -30 pts por atraso no lote.", "error");
+      sendProgress();
+    }
+  }, 1000);
+}
+
+function loadPage(page) {
+  currentPage = page;
+  placedCount = 0;
+  const qSlots = document.getElementById("questionSlots");
+  qSlots.innerHTML = "";
+  const currentQuestions = allQuestions.filter(i => i.page === page);
+
+  currentQuestions.forEach(item => {
+    const s = document.createElement("div");
+    s.className = "slot" + (filledQuestionIds.includes(item.id) ? " filled" : "");
+    s.dataset.id = item.id;
+    s.innerHTML = `<div style="font-size:12px; font-weight:bold; color:#38bdf8">${item.title}</div><div>${item.q}</div>`;
+    s.addEventListener("dragover", e => e.preventDefault());
+    s.addEventListener("drop", e => dropItem(e, s));
+    qSlots.appendChild(s);
+  });
+
+  const aCards = document.getElementById("answerCards");
+  aCards.innerHTML = "";
+  [...currentQuestions].sort(() => Math.random() - 0.5).forEach(item => {
+    const c = document.createElement("div");
+    c.className = "card" + (filledQuestionIds.includes(item.id) ? " used" : "");
+    c.draggable = true;
+    c.id = "card-" + item.id;
+    c.innerHTML = `<b>${item.rTitle}</b><p>${item.r}</p>`;
+    c.addEventListener("dragstart", e => e.dataTransfer.setData("text", item.id));
+    aCards.appendChild(c);
+  });
+
+  startTaktTimer();
+}
+
+function dropItem(e, slot) {
+  e.preventDefault();
+  const id = +e.dataTransfer.getData("text");
+  if (slot.dataset.id == id) {
+    slot.classList.add("filled");
+    document.getElementById("card-" + id).classList.add("used");
+    placedCount++;
+    filledQuestionIds.push(id);
+    totalScore += 100 * comboStreak;
+    comboStreak++;
+    showFeedback(`✅ Certo! +${100*(comboStreak-1)} pts`, "success");
+    startTaktTimer();
+    sendProgress();
+  } else {
+    totalScore = Math.max(0, totalScore - 20);
+    comboStreak = 1;
+    showFeedback("❌ Incorreto! -20 pts", "error");
+    sendProgress();
+  }
+  document.getElementById("scoreDisplay").textContent = totalScore;
+}
+
+function changePage(d) { if (currentPage + d >= 1 && currentPage + d <= 2) loadPage(currentPage + d); }
+function showFeedback(txt, type) {
+  const f = document.getElementById("feedback");
+  f.textContent = txt; f.className = type; f.style.display = "block";
+  setTimeout(() => f.style.display = "none", 3000);
+}
+
+loadPage(1);
+</script>
+</body>
+</html>
