@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Desafio SENAI: Gestão da Qualidade em Rede Persistente</title>
+<title>Desafio SENAI: Gestão da Qualidade V03 (Rede, Persistente & Progresso Visual)</title>
 
 <!-- Importação da Biblioteca PeerJS para Conexão P2P -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -30,73 +30,63 @@ header p{margin:0;font-size:14px;opacity:0.9}
 
 main{max-width:1200px;margin:auto;padding:18px}
 
-.network-panel {
+/* Seção de Conexão Multiplayer / Rede com Chaveador (V02) */
+.network-card {
   background: var(--card-bg);
-  padding: 16px 20px;
-  border-radius: 10px;
+  border-radius: 12px;
+  padding: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  margin-bottom: 16px;
-  border: 2px solid var(--senai-blue);
+  margin-bottom: 14px;
+  border: 1px solid var(--border-color);
 }
-.network-controls {
+.mode-toggle { display: flex; gap: 10px; margin-bottom: 12px; }
+.btn-mode { flex: 1; padding: 10px; border: 2px solid var(--senai-blue); background: #fff; color: var(--senai-blue); font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+.btn-mode.active { background: var(--senai-blue); color: #fff; }
+
+.multiplayer-setup { display: none; gap: 10px; flex-wrap: wrap; align-items: center; background: #f0f5ff; padding: 12px; border-radius: 8px; border: 1px solid #c0d4f5; justify-content: space-between; }
+.multiplayer-setup.show { display: flex; }
+.input-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.input-group input { padding: 8px 12px; border-radius: 6px; border: 1px solid #a0bce8; font-size: 14px; }
+.token-badge { font-weight: 900; color: var(--senai-red); background: #fff; padding: 6px 12px; border-radius: 6px; border: 1px dashed var(--senai-red); user-select: all; }
+
+/* HUD de Jogadores e Barra de Progresso em Rede Visual (V02) */
+.players-progress-panel {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--card-bg);
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 14px;
+}
+.players-progress-panel.show { display: flex; }
+.player-progress-item {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 4px;
 }
-.network-inputs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.network-inputs input {
-  padding: 8px 12px;
-  border: 2px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 14px;
-}
+.player-info-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
+.progress-bar-bg { height: 16px; background: #e2e8f0; border-radius: 10px; overflow: hidden; position: relative; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--senai-blue), var(--accent-green)); width: 0%; transition: width 0.4s ease; }
 
 .controls-container{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;background:var(--card-bg);padding:12px 18px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:14px;gap:12px}
 .nav-controls{display:flex;align-items:center;gap:10px}
 .mode-selector{display:flex;align-items:center;gap:8px;font-weight:bold;color:var(--senai-blue);font-size:14px}
 .mode-selector select{padding:8px 12px;border-radius:6px;border:2px solid var(--senai-blue);background:#fff;color:var(--text-color);font-weight:bold;cursor:pointer;font-size:14px}
 
-.hud-panel {
-  display: flex;
-  gap: 16px;
-  background: #f1f5f9;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  font-weight: bold;
-}
+.hud-panel { display: flex; gap: 16px; background: #f1f5f9; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-color); font-weight: bold; }
 .hud-item { display: flex; align-items: center; gap: 6px; font-size: 15px; }
 .hud-item.timer { color: var(--senai-red); }
 .hud-item.score { color: var(--accent-green); }
 
-button{background:var(--senai-red);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:bold;font-size:14px;cursor:pointer;transition:transform 0.1s}
-button:disabled{background:#ccc;cursor:not-allowed;opacity:0.6}
-button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
+button.btn-action{background:var(--senai-red);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:bold;font-size:14px;cursor:pointer;transition:transform 0.1s}
+button.btn-action:disabled{background:#ccc;cursor:not-allowed;opacity:0.6}
+button.btn-action:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
 .btn-green{background:var(--accent-green)}
 .btn-blue{background:var(--senai-blue)}
 
 .page-info{font-size:16px;font-weight:bold;color:var(--senai-blue)}
-
-.leaderboard-panel {
-  display: none;
-  background: var(--card-bg);
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-.leaderboard-panel h3 { margin: 0 0 10px; color: var(--senai-blue); font-size: 16px; }
-.player-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
-.player-card {
-  background: #f8fafc;
-  border: 1px solid var(--border-color);
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-}
-.player-card.is-me { border-color: var(--senai-blue); background: #eff6ff; }
 
 .instructions{background:var(--card-bg);border-radius:10px;padding:12px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);font-size:14px}
 .instructions b{color:var(--senai-blue)}
@@ -141,46 +131,50 @@ button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
 <header>
   <div class="logo">SENAI</div>
   <div>
-    <h1>⚙️ Desafio: Gestão da Qualidade em Rede</h1>
-    <p>Disputa de Eficiência Operacional e Solução de Problemas (Com Persistência e Autoreconexão)</p>
+    <h1>⚙️ Desafio: Gestão da Qualidade</h1>
+    <p>Disputa de Eficiência Operacional (Modo Solo ou Rede Persistente)</p>
   </div>
 </header>
 <main>
 
-  <!-- LOBBY MULTIPLAYER P2P -->
-  <section class="network-panel">
-    <div class="network-controls">
-      <div class="network-inputs">
-        <label><b>Seu Nome:</b></label>
-        <input type="text" id="playerName" value="Operador 1" style="width:130px" onchange="saveIdentity()">
-        
-        <button class="btn-blue" onclick="createRoom()">🌐 Criar Sala Multiplayer</button>
-        
-        <span style="opacity:0.5">|</span>
-        
-        <input type="text" id="roomCodeInput" placeholder="Código da Sala" style="width:120px; text-transform:uppercase;">
-        <button class="btn-green" onclick="joinRoom()">🔗 Entrar na Sala</button>
-        <button style="background:#64748b;" onclick="resetLocalSession()">🔄 Resetar Sessão</button>
+  <!-- Seção de Conexão Multiplayer com Chaveador (V02) -->
+  <section class="network-card">
+    <div class="mode-toggle">
+      <button id="btnSolo" class="btn-mode active" onclick="setNetworkMode(false)">🎮 Modo Solo</button>
+      <button id="btnMulti" class="btn-mode" onclick="setNetworkMode(true)">🌐 Modo Rede (Multiplayer)</button>
+    </div>
+
+    <div id="multiplayerSetup" class="multiplayer-setup">
+      <div class="input-group">
+        <label for="playerName"><b>Seu Nome:</b></label>
+        <input type="text" id="playerName" value="Operador 1" style="width: 130px;" onchange="saveIdentity()">
+      </div>
+      
+      <div class="input-group">
+        <button class="btn-action btn-blue" onclick="createRoom()">Criar Sala</button>
+        <span id="roomTokenWrapper" style="display:none; align-items:center; gap:6px;">
+          Token: <span id="displayToken" class="token-badge">------</span>
+        </span>
       </div>
 
-      <div id="roomInfo" style="font-size:14px; font-weight:bold; color:var(--senai-blue);">
-        Modo Solo Ativo (Offline)
+      <div class="input-group">
+        <input type="text" id="joinTokenInput" placeholder="Token da Sala" style="text-transform:uppercase; width:120px;">
+        <button class="btn-action btn-green" onclick="joinRoom()">Entrar</button>
       </div>
+
+      <button style="background:#64748b; padding:8px 12px; border-radius:6px; color:#fff; border:0; cursor:pointer; font-weight:bold; font-size:12px;" onclick="resetLocalSession()">🔄 Resetar Sessão</button>
     </div>
   </section>
 
-  <!-- PAINEL DE POSIÇÃO DOS JOGADORES (Ao Vivo) -->
-  <section class="leaderboard-panel" id="leaderboardPanel">
-    <h3>🌐 Placar da Corrida em Tempo Real (Até 4 Jogadores)</h3>
-    <div class="player-list" id="playerList"></div>
-  </section>
+  <!-- Painel de Progresso com Barras Visuais e Percentual Global (V02) -->
+  <section id="playersPanel" class="players-progress-panel"></section>
 
   <!-- CONTROLES DO JOGO -->
   <div class="controls-container">
     <div class="nav-controls">
-      <button id="btnPrev" onclick="changePage(-1)">◀ Anterior</button>
+      <button id="btnPrev" class="btn-action" onclick="changePage(-1)">◀ Anterior</button>
       <span class="page-info" id="pageIndicator">Página 1 / 2</span>
-      <button id="btnNext" onclick="changePage(1)">Próxima ▶</button>
+      <button id="btnNext" class="btn-action" onclick="changePage(1)">Próxima ▶</button>
     </div>
 
     <div class="hud-panel">
@@ -223,6 +217,8 @@ button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
 </main>
 
 <script>
+const TOTAL_QUESTIONS_GAME = 20;
+
 const allQuestions = [
   // PÁGINA 1
   { id: 1, page: 1, title: "Desafio 01", q: "A fábrica tem muitas paradas, mas não se sabe quais máquinas causam 80% dos atrasos.", rTitle: "Diagrama de Pareto", r: "Ferramenta gráfica que organiza as ocorrências por ordem de frequência para identificar os poucos problemas vitais (regra 80/20)." },
@@ -260,10 +256,10 @@ let timeRemaining = 180;
 let totalScore = 0;
 let comboStreak = 1;
 
-// Guarda os IDs das questões já respondidas com sucesso no tabuleiro
+// Guarda os IDs das questões já respondidas com sucesso no tabuleiro todo (0 a 20)
 let filledQuestionIds = [];
 
-// --- SISTEMA DE PERSISTÊNCIA LOCAL (LOCALSTORAGE) ---
+// --- SISTEMA DE PERSISTÊNCIA LOCAL (LOCALSTORAGE DA V01) ---
 let myPlayerId = localStorage.getItem("qual_playerId");
 if (!myPlayerId) {
   myPlayerId = "OP-" + Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -293,7 +289,8 @@ function saveGameState() {
     currentMode,
     filledQuestionIds,
     roomCode: localStorage.getItem("qual_roomCode") || null,
-    isHost: localStorage.getItem("qual_isHost") === "true"
+    isHost: localStorage.getItem("qual_isHost") === "true",
+    isMultiplayer: localStorage.getItem("qual_isMultiplayer") === "true"
   };
   localStorage.setItem("qual_gameState", JSON.stringify(state));
 }
@@ -324,160 +321,197 @@ function resetLocalSession() {
     localStorage.removeItem("qual_gameState");
     localStorage.removeItem("qual_roomCode");
     localStorage.removeItem("qual_isHost");
+    localStorage.removeItem("qual_isMultiplayer");
     location.reload();
   }
 }
 
-// --- ESTRUTURA REDE P2P RECONECTÁVEL (PEERJS) ---
+// --- ESTRUTURA REDE P2P RECONECTÁVEL E VISUAL (FUSÃO V01 + V02) ---
+let isMultiplayer = false;
 let peer = null;
 let connections = [];
 let hostConn = null;
 let isHost = false;
-let playersData = {};
+let players = []; 
 
-function initMyPlayerData() {
-  const name = document.getElementById("playerName").value || "Operador";
-  playersData[myPlayerId] = {
-    name: name,
-    score: totalScore,
-    progress: `${placedCount}/10`,
-    timeSec: (currentMode === "timed") ? (180 - timeRemaining) : secondsElapsed,
-    isDone: (placedCount === 10)
-  };
+function setNetworkMode(active) {
+  isMultiplayer = active;
+  localStorage.setItem("qual_isMultiplayer", active ? "true" : "false");
+  document.getElementById("btnSolo").classList.toggle("active", !active);
+  document.getElementById("btnMulti").classList.toggle("active", active);
+  document.getElementById("multiplayerSetup").classList.toggle("show", active);
+  document.getElementById("playersPanel").classList.toggle("show", active);
+  saveGameState();
 }
 
-function createRoom(customCode) {
-  initMyPlayerData();
-  isHost = true;
-  const roomCode = customCode || ("QUAL-" + Math.floor(1000 + Math.random() * 9000));
-  
-  localStorage.setItem("qual_roomCode", roomCode);
-  localStorage.setItem("qual_isHost", "true");
-  saveGameState();
+function generateToken() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
 
-  peer = new Peer(roomCode);
+function createRoom(customToken) {
+  const token = customToken || generateToken();
+  const fullPeerId = "SENAI-QUAL-" + token;
+
+  localStorage.setItem("qual_roomCode", token);
+  localStorage.setItem("qual_isHost", "true");
+  setNetworkMode(true);
+
+  peer = new Peer(fullPeerId);
   
-  peer.on('open', id => {
-    document.getElementById("roomInfo").innerHTML = `🔑 Código da Sala: <b style="color:var(--senai-red); font-size:16px;">${id}</b> (Aguardando jogadores)`;
-    document.getElementById("leaderboardPanel").style.display = "block";
-    updateLeaderboardUI();
+  peer.on("open", (id) => {
+    isHost = true;
+    document.getElementById("displayToken").textContent = token;
+    document.getElementById("roomTokenWrapper").style.display = "inline-flex";
+    
+    // Inicializa lista de jogadores com o Host se estiver vazia
+    if (players.length === 0) {
+      players = [{
+        id: myPlayerId,
+        name: document.getElementById("playerName").value || "Host",
+        score: totalScore,
+        matched: filledQuestionIds.length
+      }];
+    }
+    renderPlayersProgress();
+    showFeedback("Sala criada/restaurada com sucesso!", "success");
   });
 
-  peer.on('connection', conn => {
+  peer.on("connection", (conn) => {
     connections.push(conn);
-    conn.on('data', data => handleIncomingData(data, conn));
-    conn.on('close', () => {
+    conn.on("data", (data) => handleIncomingData(data, conn));
+    conn.on("close", () => {
       connections = connections.filter(c => c !== conn);
     });
   });
 
   peer.on('error', err => {
     if (err.type === 'unavailable-id') {
-      // Se deu F5 e o ID do Host ainda não expirou no servidor Peer, tenta reconectar
-      showFeedback("Reconectando como Host...", "success");
+      showFeedback("Reconectando à sala como Host...", "success");
     }
   });
 }
 
-function joinRoom(customCode) {
-  initMyPlayerData();
-  isHost = false;
-  const roomCode = customCode || document.getElementById("roomCodeInput").value.trim().toUpperCase();
-  if (!roomCode) { alert("Digite o código da sala!"); return; }
+function joinRoom(customToken) {
+  const token = customToken || document.getElementById("joinTokenInput").value.trim().toUpperCase();
+  if (!token) return alert("Digite um token válido!");
 
-  localStorage.setItem("qual_roomCode", roomCode);
+  localStorage.setItem("qual_roomCode", token);
   localStorage.setItem("qual_isHost", "false");
-  saveGameState();
+  setNetworkMode(true);
 
   peer = new Peer();
-  peer.on('open', () => {
-    hostConn = peer.connect(roomCode);
-    
-    hostConn.on('open', () => {
-      document.getElementById("roomInfo").innerHTML = `✅ Conectado à Sala: <b>${roomCode}</b>`;
-      document.getElementById("leaderboardPanel").style.display = "block";
-      
-      // Envia requisição de entrada/reconexão para o Host
+  peer.on("open", () => {
+    isHost = false;
+    hostConn = peer.connect("SENAI-QUAL-" + token);
+
+    hostConn.on("open", () => {
       hostConn.send({
-        type: 'JOIN_OR_RECONNECT',
+        type: "JOIN_OR_RECONNECT",
         playerId: myPlayerId,
-        playerData: playersData[myPlayerId]
+        name: document.getElementById("playerName").value || "Operador",
+        score: totalScore,
+        matched: filledQuestionIds.length
       });
+      showFeedback("Conectado à sala!", "success");
     });
 
-    hostConn.on('data', data => handleIncomingData(data, hostConn));
+    hostConn.on("data", (data) => handleIncomingData(data, hostConn));
   });
+}
+
+function broadcastData(data) {
+  connections.forEach(conn => { if (conn && conn.open) conn.send(data); });
 }
 
 function handleIncomingData(data, conn) {
-  if (data.type === 'JOIN_OR_RECONNECT' && isHost) {
-    playersData[data.playerId] = data.playerData;
-    broadcastGameState();
-  } else if (data.type === 'UPDATE_STATE') {
-    playersData = data.players;
-    updateLeaderboardUI();
-  } else if (data.type === 'PLAYER_PROGRESS' && isHost) {
-    playersData[data.playerId] = data.playerData;
-    broadcastGameState();
+  if (isHost && data.type === "JOIN_OR_RECONNECT") {
+    const existingIndex = players.findIndex(p => p.id === data.playerId);
+    if (existingIndex >= 0) {
+      players[existingIndex] = { id: data.playerId, name: data.name, score: data.score, matched: data.matched };
+    } else {
+      players.push({ id: data.playerId, name: data.name, score: data.score, matched: data.matched });
+    }
+    broadcastData({ type: "SYNC_PLAYERS", players });
+    renderPlayersProgress();
+    return;
+  }
+
+  if (data.type === "SYNC_PLAYERS") {
+    players = data.players;
+    renderPlayersProgress();
+    return;
+  }
+
+  if (isHost && data.type === "UPDATE_PROGRESS") {
+    const p = players.find(x => x.id === data.id);
+    if (p) {
+      p.score = data.score;
+      p.matched = data.matched;
+      p.name = data.name;
+    }
+    broadcastData({ type: "SYNC_PLAYERS", players });
+    renderPlayersProgress();
   }
 }
 
-function broadcastGameState() {
-  if (!isHost) return;
-  updateLeaderboardUI();
-  connections.forEach(conn => {
-    if (conn.open) conn.send({ type: 'UPDATE_STATE', players: playersData });
-  });
-}
-
-function sendMyProgress() {
+function updateMyNetworkProgress() {
   saveGameState();
-  const currentSec = (currentMode === "timed") ? (180 - timeRemaining) : secondsElapsed;
-  playersData[myPlayerId] = {
-    name: document.getElementById("playerName").value || "Operador",
-    score: totalScore,
-    progress: `${placedCount}/10`,
-    timeSec: currentSec,
-    isDone: (placedCount === 10)
-  };
+  if (!isMultiplayer) return;
+  
+  const totalMatchedGlobal = filledQuestionIds.length;
+  const myName = document.getElementById("playerName").value || "Operador";
+
+  let me = players.find(p => p.id === myPlayerId);
+  if (me) {
+    me.name = myName;
+    me.score = totalScore;
+    me.matched = totalMatchedGlobal;
+  } else {
+    players.push({ id: myPlayerId, name: myName, score: totalScore, matched: totalMatchedGlobal });
+  }
 
   if (isHost) {
-    broadcastGameState();
+    broadcastData({ type: "SYNC_PLAYERS", players });
   } else if (hostConn && hostConn.open) {
     hostConn.send({
-      type: 'PLAYER_PROGRESS',
-      playerId: myPlayerId,
-      playerData: playersData[myPlayerId]
+      type: "UPDATE_PROGRESS",
+      id: myPlayerId,
+      name: myName,
+      score: totalScore,
+      matched: totalMatchedGlobal
     });
-  } else {
-    updateLeaderboardUI();
   }
+  renderPlayersProgress();
 }
 
-function updateLeaderboardUI() {
-  const listEl = document.getElementById("playerList");
-  listEl.innerHTML = "";
+function renderPlayersProgress() {
+  if (!isMultiplayer) return;
+  const panel = document.getElementById("playersPanel");
+  panel.innerHTML = "";
 
-  const sortedPlayers = Object.keys(playersData).map(id => ({
-    id, ...playersData[id]
-  })).sort((a, b) => b.score - a.score || a.timeSec - b.timeSec);
+  // Ordena por pontuação e depois por acertos globais
+  const sorted = [...players].sort((a,b) => b.score - a.score || b.matched - a.matched);
 
-  sortedPlayers.forEach((p, idx) => {
-    const card = document.createElement("div");
-    card.className = "player-card" + (p.id === myPlayerId ? " is-me" : "");
-    const m = String(Math.floor(p.timeSec / 60)).padStart(2, '0');
-    const s = String(p.timeSec % 60).padStart(2, '0');
+  sorted.forEach(p => {
+    // Cálculo do percentual global acumulado das 20 questões (V02)
+    const pct = Math.min(100, Math.round((p.matched / TOTAL_QUESTIONS_GAME) * 100));
     
-    card.innerHTML = `
-      <b>#${idx + 1} ${p.name} ${p.id === myPlayerId ? "(Você)" : ""}</b><br>
-      🎯 Acertos: <b>${p.progress}</b> | 🏆 Pts: <b>${p.score}</b><br>
-      ⏱️ Tempo: ${m}:${s} ${p.isDone ? "✅ Concluído" : "⏳ Jogando"}
+    const div = document.createElement("div");
+    div.className = "player-progress-item";
+    div.innerHTML = `
+      <div class="player-info-row">
+        <span>👤 ${p.name} ${p.id === myPlayerId ? "(Você)" : ""}</span>
+        <span>🏆 ${p.score} pts | <b>${pct}% Concluído</b> (${p.matched}/${TOTAL_QUESTIONS_GAME})</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width: ${pct}%;"></div>
+      </div>
     `;
-    listEl.appendChild(card);
+    panel.appendChild(div);
   });
 }
 
-// --- ENGINE DO JOGO E RESTAURAÇÃO DE TABULEIRO ---
+// --- ENGINE DO JOGO E CRONÔMETRO ---
 function startTimer() {
   stopTimer();
 
@@ -509,13 +543,16 @@ function updateTimerDisplay(sec) {
 
 function loadPage(page) {
   currentPage = page;
+  
+  // Recalcula o número de cartões encaixados na PÁGINA ATUAL para o indicador local
+  const currentQuestions = allQuestions.filter(item => item.page === currentPage);
+  placedCount = currentQuestions.filter(item => filledQuestionIds.includes(item.id)).length;
+  
   updateScoreBar();
   
   document.getElementById("pageIndicator").textContent = `Página ${currentPage} / ${totalPages}`;
   document.getElementById("btnPrev").disabled = (currentPage === 1);
   document.getElementById("btnNext").disabled = (currentPage === totalPages);
-  
-  const currentQuestions = allQuestions.filter(item => item.page === currentPage);
   
   const baralhos = [
     "Página 1: Módulo A (Ferramentas e Métodos da Qualidade)",
@@ -531,7 +568,6 @@ function loadPage(page) {
     s.className = "slot";
     s.dataset.id = item.id;
 
-    // Se a questão já tiver sido respondida anteriormente (persistida), re-renderiza como cheia
     if (filledQuestionIds.includes(item.id)) {
       s.classList.add("filled");
       s.innerHTML = `
@@ -579,7 +615,7 @@ function loadPage(page) {
   });
 
   startTimer();
-  sendMyProgress();
+  updateMyNetworkProgress();
 }
 
 function dropItem(e, slot) {
@@ -612,15 +648,14 @@ function dropItem(e, slot) {
 
     showFeedback(`✅ Associação Correta! +${pointsGained} pts (Combo x${comboStreak-1})`, "success");
     updateScoreBar();
-    sendMyProgress();
+    updateMyNetworkProgress();
     
     if (placedCount === 10) {
       stopTimer();
-      sendMyProgress();
       if(currentPage < totalPages) {
         showFeedback("🎉 Módulo concluído! Clique em 'Próxima' para continuar.", "success");
       } else {
-        showFeedback(`🏆 PARABÉNS! Você concluiu o desafio com ${totalScore} pontos!`, "success");
+        showFeedback(`🏆 PARABÉNS! Você concluiu 100% do desafio com ${totalScore} pontos!`, "success");
       }
     }
   } else {
@@ -634,7 +669,7 @@ function dropItem(e, slot) {
       showFeedback("❌ Incorreto! -20 pts e Combo resetado.", "error");
     }
     updateScoreBar();
-    sendMyProgress();
+    updateMyNetworkProgress();
   }
 }
 
@@ -681,14 +716,17 @@ function updateScoreBar() {
 
 // AUTO-RESTAURAÇÃO AO INICIALIZAR
 (function initApp() {
-  const hasSavedState = loadSavedGameState();
+  loadSavedGameState();
+  
+  const savedIsMultiplayer = localStorage.getItem("qual_isMultiplayer") === "true";
+  setNetworkMode(savedIsMultiplayer);
+
   loadPage(currentPage);
 
-  // Auto-reconexão P2P caso estivesse em uma sala
   const savedRoomCode = localStorage.getItem("qual_roomCode");
   const savedIsHost = localStorage.getItem("qual_isHost") === "true";
 
-  if (savedRoomCode) {
+  if (savedRoomCode && savedIsMultiplayer) {
     if (savedIsHost) {
       createRoom(savedRoomCode);
     } else {
