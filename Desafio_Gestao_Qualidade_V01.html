@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Desafio SENAI: Gestão da Qualidade - Edição Cronometrada</title>
+<title>Desafio SENAI: Gestão da Qualidade em Rede Persistente</title>
+
+<!-- Importação da Biblioteca PeerJS para Conexão P2P -->
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
 <style>
 :root {
   --senai-blue: #0046ad;
@@ -26,12 +30,34 @@ header p{margin:0;font-size:14px;opacity:0.9}
 
 main{max-width:1200px;margin:auto;padding:18px}
 
+.network-panel {
+  background: var(--card-bg);
+  padding: 16px 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
+  border: 2px solid var(--senai-blue);
+}
+.network-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.network-inputs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.network-inputs input {
+  padding: 8px 12px;
+  border: 2px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
 .controls-container{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;background:var(--card-bg);padding:12px 18px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);margin-bottom:14px;gap:12px}
 .nav-controls{display:flex;align-items:center;gap:10px}
 .mode-selector{display:flex;align-items:center;gap:8px;font-weight:bold;color:var(--senai-blue);font-size:14px}
 .mode-selector select{padding:8px 12px;border-radius:6px;border:2px solid var(--senai-blue);background:#fff;color:var(--text-color);font-weight:bold;cursor:pointer;font-size:14px}
 
-/* HUD do Tempo e Score */
 .hud-panel {
   display: flex;
   gap: 16px;
@@ -48,7 +74,29 @@ main{max-width:1200px;margin:auto;padding:18px}
 button{background:var(--senai-red);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-weight:bold;font-size:14px;cursor:pointer;transition:transform 0.1s}
 button:disabled{background:#ccc;cursor:not-allowed;opacity:0.6}
 button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
+.btn-green{background:var(--accent-green)}
+.btn-blue{background:var(--senai-blue)}
+
 .page-info{font-size:16px;font-weight:bold;color:var(--senai-blue)}
+
+.leaderboard-panel {
+  display: none;
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.leaderboard-panel h3 { margin: 0 0 10px; color: var(--senai-blue); font-size: 16px; }
+.player-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.player-card {
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.player-card.is-me { border-color: var(--senai-blue); background: #eff6ff; }
 
 .instructions{background:var(--card-bg);border-radius:10px;padding:12px 16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);font-size:14px}
 .instructions b{color:var(--senai-blue)}
@@ -61,12 +109,10 @@ button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
 .slot{min-height:75px;border:2px dashed #9eb2c2;border-radius:8px;padding:12px;background:#f7fafc;display:flex;flex-direction:column;justify-content:center;transition:all 0.3s ease}
 .slot.over{background:#e9f4fb;border-color:var(--senai-blue)}
 
-/* Estilização do Slot quando preenchido corretamente */
 .slot.filled{border:2px solid var(--accent-green);background:var(--accent-green-bg);box-shadow:0 2px 6px rgba(0,0,0,0.05)}
 .slot .q-title{font-size:12px;font-weight:bold;color:var(--senai-blue);margin-bottom:4px}
 .slot .q-text{font-size:13.5px;color:var(--text-color);line-height:1.35}
 
-/* Caixa do contexto revelado pós-acerto */
 .slot .answered-box{margin-top:10px;padding:10px;background:#ffffff;border-left:4px solid var(--accent-green);border-radius:4px}
 .slot .answered-title{font-weight:bold;color:#1b5e20;font-size:13px;margin-bottom:3px;display:flex;align-items:center;gap:5px}
 .slot .answered-text{font-size:13px;color:#2c3e50;line-height:1.35}
@@ -95,11 +141,41 @@ button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
 <header>
   <div class="logo">SENAI</div>
   <div>
-    <h1>⚙️ Desafio: Gestão da Qualidade</h1>
-    <p>Relacione os Desafios da Manufatura às suas respectivas Ferramentas e Soluções.</p>
+    <h1>⚙️ Desafio: Gestão da Qualidade em Rede</h1>
+    <p>Disputa de Eficiência Operacional e Solução de Problemas (Com Persistência e Autoreconexão)</p>
   </div>
 </header>
 <main>
+
+  <!-- LOBBY MULTIPLAYER P2P -->
+  <section class="network-panel">
+    <div class="network-controls">
+      <div class="network-inputs">
+        <label><b>Seu Nome:</b></label>
+        <input type="text" id="playerName" value="Operador 1" style="width:130px" onchange="saveIdentity()">
+        
+        <button class="btn-blue" onclick="createRoom()">🌐 Criar Sala Multiplayer</button>
+        
+        <span style="opacity:0.5">|</span>
+        
+        <input type="text" id="roomCodeInput" placeholder="Código da Sala" style="width:120px; text-transform:uppercase;">
+        <button class="btn-green" onclick="joinRoom()">🔗 Entrar na Sala</button>
+        <button style="background:#64748b;" onclick="resetLocalSession()">🔄 Resetar Sessão</button>
+      </div>
+
+      <div id="roomInfo" style="font-size:14px; font-weight:bold; color:var(--senai-blue);">
+        Modo Solo Ativo (Offline)
+      </div>
+    </div>
+  </section>
+
+  <!-- PAINEL DE POSIÇÃO DOS JOGADORES (Ao Vivo) -->
+  <section class="leaderboard-panel" id="leaderboardPanel">
+    <h3>🌐 Placar da Corrida em Tempo Real (Até 4 Jogadores)</h3>
+    <div class="player-list" id="playerList"></div>
+  </section>
+
+  <!-- CONTROLES DO JOGO -->
   <div class="controls-container">
     <div class="nav-controls">
       <button id="btnPrev" onclick="changePage(-1)">◀ Anterior</button>
@@ -107,7 +183,6 @@ button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
       <button id="btnNext" onclick="changePage(1)">Próxima ▶</button>
     </div>
 
-    <!-- HUD de Tempo e Pontuação -->
     <div class="hud-panel">
       <div class="hud-item timer">⏱️ Tempo: <span id="timeDisplay">00:00</span></div>
       <div class="hud-item score">🏆 Pontos: <span id="scoreDisplay">0</span></div>
@@ -149,7 +224,7 @@ button:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.02)}
 
 <script>
 const allQuestions = [
-  // PÁGINA 1 (Módulo A)
+  // PÁGINA 1
   { id: 1, page: 1, title: "Desafio 01", q: "A fábrica tem muitas paradas, mas não se sabe quais máquinas causam 80% dos atrasos.", rTitle: "Diagrama de Pareto", r: "Ferramenta gráfica que organiza as ocorrências por ordem de frequência para identificar os poucos problemas vitais (regra 80/20)." },
   { id: 2, page: 1, title: "Desafio 02", q: "Um novo lote de eixos apresenta defeitos e a equipe precisa analisar causas em 6 categorias (6M).", rTitle: "Diagrama de Causa e Efeito (Ishikawa)", r: "Estrutura para mapear e categorizar causas raízes potenciais em Mão de obra, Máquina, Material, Método, Medida e Meio Ambiente." },
   { id: 3, page: 1, title: "Desafio 03", q: "Um projeto de melhoria foi implantado, mas os resultados não se mantêm; é preciso girar o ciclo de controle.", rTitle: "Ciclo PDCA", r: "Metodologia iterativa de quatro etapas (Plan, Do, Check, Act) para a melhoria contínua e padronização de processos." },
@@ -161,7 +236,7 @@ const allQuestions = [
   { id: 9, page: 1, title: "Desafio 09", q: "O tempo de preparação (setup) de uma prensa é de 1 hora, atrasando o lote; o objetivo é reduzir para minutos.", rTitle: "Metodologia SMED (Troca Rápida)", r: "Técnica focada na redução drástica dos tempos de troca de ferramentas e preparação de máquinas na linha." },
   { id: 10, page: 1, title: "Desafio 10", q: "O posto de trabalho está desorganizado, com ferramentas espalhadas, gerando perda de tempo e riscos.", rTitle: "Programa 5S (Organização e Limpeza)", r: "Metodologia para organizar, limpar, padronizar e manter a disciplina no ambiente de trabalho (Seiri, Seiton, Seiso, Seiketsu, Shitsuke)." },
 
-  // PÁGINA 2 (Módulo B)
+  // PÁGINA 2
   { id: 11, page: 2, title: "Desafio 11", q: "O operador caminha 50 metros entre as máquinas; é preciso otimizar o fluxo físico para reduzir movimentação.", rTitle: "Layout em Célula de Manufatura ('U')", r: "Arranjo físico de equipamentos posicionados sequencialmente para otimizar o fluxo contínuo e minimizar o deslocamento." },
   { id: 12, page: 2, title: "Desafio 12", q: "A empresa quer reduzir desperdícios produzindo exatamente a quantidade demandada, no momento certo.", rTitle: "Just-in-Time (JIT)", r: "Filosofia de produção focada em eliminar estoques desnecessários e fornecer materiais exatamente quando requisitados." },
   { id: 13, page: 2, title: "Desafio 13", q: "Não se sabe o tempo padrão de uma operação, dificultando o cálculo de metas e custos.", rTitle: "Cronoanálise (Estudo de Tempos e Métodos)", r: "Técnica de medição sistemática do tempo necessário para um operador qualificado realizar uma tarefa padronizada." },
@@ -179,17 +254,232 @@ const totalPages = 2;
 let placedCount = 0;
 let currentMode = "normal";
 
-// Variáveis de Cronômetro e Score
 let timerInterval = null;
 let secondsElapsed = 0;
-let timeRemaining = 180; // 3 min para modo Takt Time
+let timeRemaining = 180;
 let totalScore = 0;
 let comboStreak = 1;
 
+// Guarda os IDs das questões já respondidas com sucesso no tabuleiro
+let filledQuestionIds = [];
+
+// --- SISTEMA DE PERSISTÊNCIA LOCAL (LOCALSTORAGE) ---
+let myPlayerId = localStorage.getItem("qual_playerId");
+if (!myPlayerId) {
+  myPlayerId = "OP-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+  localStorage.setItem("qual_playerId", myPlayerId);
+}
+
+// Carrega Nome Anterior
+const savedName = localStorage.getItem("qual_playerName");
+if (savedName) {
+  document.getElementById("playerName").value = savedName;
+}
+
+function saveIdentity() {
+  const name = document.getElementById("playerName").value || "Operador 1";
+  localStorage.setItem("qual_playerName", name);
+}
+
+function saveGameState() {
+  saveIdentity();
+  const state = {
+    currentPage,
+    placedCount,
+    totalScore,
+    comboStreak,
+    secondsElapsed,
+    timeRemaining,
+    currentMode,
+    filledQuestionIds,
+    roomCode: localStorage.getItem("qual_roomCode") || null,
+    isHost: localStorage.getItem("qual_isHost") === "true"
+  };
+  localStorage.setItem("qual_gameState", JSON.stringify(state));
+}
+
+function loadSavedGameState() {
+  const raw = localStorage.getItem("qual_gameState");
+  if (!raw) return false;
+  try {
+    const state = JSON.parse(raw);
+    currentPage = state.currentPage || 1;
+    placedCount = state.placedCount || 0;
+    totalScore = state.totalScore || 0;
+    comboStreak = state.comboStreak || 1;
+    secondsElapsed = state.secondsElapsed || 0;
+    timeRemaining = state.timeRemaining || 180;
+    currentMode = state.currentMode || "normal";
+    filledQuestionIds = state.filledQuestionIds || [];
+    
+    document.getElementById("difficultySelect").value = currentMode;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function resetLocalSession() {
+  if (confirm("Deseja realmente limpar a sessão local e desconectar da sala?")) {
+    localStorage.removeItem("qual_gameState");
+    localStorage.removeItem("qual_roomCode");
+    localStorage.removeItem("qual_isHost");
+    location.reload();
+  }
+}
+
+// --- ESTRUTURA REDE P2P RECONECTÁVEL (PEERJS) ---
+let peer = null;
+let connections = [];
+let hostConn = null;
+let isHost = false;
+let playersData = {};
+
+function initMyPlayerData() {
+  const name = document.getElementById("playerName").value || "Operador";
+  playersData[myPlayerId] = {
+    name: name,
+    score: totalScore,
+    progress: `${placedCount}/10`,
+    timeSec: (currentMode === "timed") ? (180 - timeRemaining) : secondsElapsed,
+    isDone: (placedCount === 10)
+  };
+}
+
+function createRoom(customCode) {
+  initMyPlayerData();
+  isHost = true;
+  const roomCode = customCode || ("QUAL-" + Math.floor(1000 + Math.random() * 9000));
+  
+  localStorage.setItem("qual_roomCode", roomCode);
+  localStorage.setItem("qual_isHost", "true");
+  saveGameState();
+
+  peer = new Peer(roomCode);
+  
+  peer.on('open', id => {
+    document.getElementById("roomInfo").innerHTML = `🔑 Código da Sala: <b style="color:var(--senai-red); font-size:16px;">${id}</b> (Aguardando jogadores)`;
+    document.getElementById("leaderboardPanel").style.display = "block";
+    updateLeaderboardUI();
+  });
+
+  peer.on('connection', conn => {
+    connections.push(conn);
+    conn.on('data', data => handleIncomingData(data, conn));
+    conn.on('close', () => {
+      connections = connections.filter(c => c !== conn);
+    });
+  });
+
+  peer.on('error', err => {
+    if (err.type === 'unavailable-id') {
+      // Se deu F5 e o ID do Host ainda não expirou no servidor Peer, tenta reconectar
+      showFeedback("Reconectando como Host...", "success");
+    }
+  });
+}
+
+function joinRoom(customCode) {
+  initMyPlayerData();
+  isHost = false;
+  const roomCode = customCode || document.getElementById("roomCodeInput").value.trim().toUpperCase();
+  if (!roomCode) { alert("Digite o código da sala!"); return; }
+
+  localStorage.setItem("qual_roomCode", roomCode);
+  localStorage.setItem("qual_isHost", "false");
+  saveGameState();
+
+  peer = new Peer();
+  peer.on('open', () => {
+    hostConn = peer.connect(roomCode);
+    
+    hostConn.on('open', () => {
+      document.getElementById("roomInfo").innerHTML = `✅ Conectado à Sala: <b>${roomCode}</b>`;
+      document.getElementById("leaderboardPanel").style.display = "block";
+      
+      // Envia requisição de entrada/reconexão para o Host
+      hostConn.send({
+        type: 'JOIN_OR_RECONNECT',
+        playerId: myPlayerId,
+        playerData: playersData[myPlayerId]
+      });
+    });
+
+    hostConn.on('data', data => handleIncomingData(data, hostConn));
+  });
+}
+
+function handleIncomingData(data, conn) {
+  if (data.type === 'JOIN_OR_RECONNECT' && isHost) {
+    playersData[data.playerId] = data.playerData;
+    broadcastGameState();
+  } else if (data.type === 'UPDATE_STATE') {
+    playersData = data.players;
+    updateLeaderboardUI();
+  } else if (data.type === 'PLAYER_PROGRESS' && isHost) {
+    playersData[data.playerId] = data.playerData;
+    broadcastGameState();
+  }
+}
+
+function broadcastGameState() {
+  if (!isHost) return;
+  updateLeaderboardUI();
+  connections.forEach(conn => {
+    if (conn.open) conn.send({ type: 'UPDATE_STATE', players: playersData });
+  });
+}
+
+function sendMyProgress() {
+  saveGameState();
+  const currentSec = (currentMode === "timed") ? (180 - timeRemaining) : secondsElapsed;
+  playersData[myPlayerId] = {
+    name: document.getElementById("playerName").value || "Operador",
+    score: totalScore,
+    progress: `${placedCount}/10`,
+    timeSec: currentSec,
+    isDone: (placedCount === 10)
+  };
+
+  if (isHost) {
+    broadcastGameState();
+  } else if (hostConn && hostConn.open) {
+    hostConn.send({
+      type: 'PLAYER_PROGRESS',
+      playerId: myPlayerId,
+      playerData: playersData[myPlayerId]
+    });
+  } else {
+    updateLeaderboardUI();
+  }
+}
+
+function updateLeaderboardUI() {
+  const listEl = document.getElementById("playerList");
+  listEl.innerHTML = "";
+
+  const sortedPlayers = Object.keys(playersData).map(id => ({
+    id, ...playersData[id]
+  })).sort((a, b) => b.score - a.score || a.timeSec - b.timeSec);
+
+  sortedPlayers.forEach((p, idx) => {
+    const card = document.createElement("div");
+    card.className = "player-card" + (p.id === myPlayerId ? " is-me" : "");
+    const m = String(Math.floor(p.timeSec / 60)).padStart(2, '0');
+    const s = String(p.timeSec % 60).padStart(2, '0');
+    
+    card.innerHTML = `
+      <b>#${idx + 1} ${p.name} ${p.id === myPlayerId ? "(Você)" : ""}</b><br>
+      🎯 Acertos: <b>${p.progress}</b> | 🏆 Pts: <b>${p.score}</b><br>
+      ⏱️ Tempo: ${m}:${s} ${p.isDone ? "✅ Concluído" : "⏳ Jogando"}
+    `;
+    listEl.appendChild(card);
+  });
+}
+
+// --- ENGINE DO JOGO E RESTAURAÇÃO DE TABULEIRO ---
 function startTimer() {
   stopTimer();
-  secondsElapsed = 0;
-  timeRemaining = 180;
 
   timerInterval = setInterval(() => {
     if (currentMode === "timed") {
@@ -219,8 +509,6 @@ function updateTimerDisplay(sec) {
 
 function loadPage(page) {
   currentPage = page;
-  placedCount = 0;
-  comboStreak = 1;
   updateScoreBar();
   
   document.getElementById("pageIndicator").textContent = `Página ${currentPage} / ${totalPages}`;
@@ -242,10 +530,24 @@ function loadPage(page) {
     const s = document.createElement("div");
     s.className = "slot";
     s.dataset.id = item.id;
-    s.innerHTML = `<div class="q-title">${item.title}</div><div class="q-text">${item.q}</div>`;
-    s.addEventListener("dragover", e => { e.preventDefault(); s.classList.add("over"); });
-    s.addEventListener("dragleave", () => s.classList.remove("over"));
-    s.addEventListener("drop", e => dropItem(e, s));
+
+    // Se a questão já tiver sido respondida anteriormente (persistida), re-renderiza como cheia
+    if (filledQuestionIds.includes(item.id)) {
+      s.classList.add("filled");
+      s.innerHTML = `
+        <div class="q-title">${item.title}</div>
+        <div class="q-text">${item.q}</div>
+        <div class="answered-box">
+          <div class="answered-title">✓ ${item.rTitle}</div>
+          <div class="answered-text">${item.r}</div>
+        </div>
+      `;
+    } else {
+      s.innerHTML = `<div class="q-title">${item.title}</div><div class="q-text">${item.q}</div>`;
+      s.addEventListener("dragover", e => { e.preventDefault(); s.classList.add("over"); });
+      s.addEventListener("dragleave", () => s.classList.remove("over"));
+      s.addEventListener("drop", e => dropItem(e, s));
+    }
     qSlots.appendChild(s);
   });
 
@@ -258,6 +560,9 @@ function loadPage(page) {
   shuffledCards.forEach(item => {
     const c = document.createElement("div");
     c.className = "card";
+    if (filledQuestionIds.includes(item.id)) {
+      c.classList.add("used");
+    }
     c.draggable = true;
     c.id = "card-" + item.id;
     
@@ -274,6 +579,7 @@ function loadPage(page) {
   });
 
   startTimer();
+  sendMyProgress();
 }
 
 function dropItem(e, slot) {
@@ -296,17 +602,21 @@ function dropItem(e, slot) {
 
     document.getElementById("card-" + id).classList.add("used");
     placedCount++;
+    if (!filledQuestionIds.includes(id)) {
+      filledQuestionIds.push(id);
+    }
 
-    // Cálculo da pontuação com multiplicador de Combo
     const pointsGained = 100 * comboStreak;
     totalScore += pointsGained;
     comboStreak++;
 
     showFeedback(`✅ Associação Correta! +${pointsGained} pts (Combo x${comboStreak-1})`, "success");
     updateScoreBar();
+    sendMyProgress();
     
     if (placedCount === 10) {
       stopTimer();
+      sendMyProgress();
       if(currentPage < totalPages) {
         showFeedback("🎉 Módulo concluído! Clique em 'Próxima' para continuar.", "success");
       } else {
@@ -314,17 +624,17 @@ function dropItem(e, slot) {
       }
     }
   } else {
-    comboStreak = 1; // Reseta o combo
-    totalScore = Math.max(0, totalScore - 20); // Penalidade de erro
+    comboStreak = 1;
+    totalScore = Math.max(0, totalScore - 20);
     
-    // Penalidade no modo cronometrado
     if (currentMode === "timed") {
       timeRemaining = Math.max(0, timeRemaining - 10);
-      showFeedback("❌ Incorreto! -20 pts e -10 segundos de Takt Time!", "error");
+      showFeedback("❌ Incorreto! -20 pts e -10s de Takt Time!", "error");
     } else {
       showFeedback("❌ Incorreto! -20 pts e Combo resetado.", "error");
     }
     updateScoreBar();
+    sendMyProgress();
   }
 }
 
@@ -344,7 +654,6 @@ function toggleDifficulty() {
     instText.innerHTML = "🟢 <b>Modo Normal:</b> Cartões exibem o nome da ferramenta e o conceito desde o início.";
   }
 
-  totalScore = 0;
   loadPage(currentPage);
 }
 
@@ -370,8 +679,23 @@ function updateScoreBar() {
   document.getElementById("scoreDisplay").textContent = totalScore;
 }
 
-// Inicialização
-loadPage(1);
+// AUTO-RESTAURAÇÃO AO INICIALIZAR
+(function initApp() {
+  const hasSavedState = loadSavedGameState();
+  loadPage(currentPage);
+
+  // Auto-reconexão P2P caso estivesse em uma sala
+  const savedRoomCode = localStorage.getItem("qual_roomCode");
+  const savedIsHost = localStorage.getItem("qual_isHost") === "true";
+
+  if (savedRoomCode) {
+    if (savedIsHost) {
+      createRoom(savedRoomCode);
+    } else {
+      joinRoom(savedRoomCode);
+    }
+  }
+})();
 </script>
 </body>
 </html>
