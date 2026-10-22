@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafio SENAI: Gestão da Qualidade</title>
+<style>
+:root {
+  --senai-blue: #0046ad;
+  --senai-red: #e30613;
+  --bg-color: #eef5ff;
+  --card-bg: #ffffff;
+  --text-color: #17233c;
+  --border-color: #d7e4f8;
+  --accent-green: #2e7d32;
+  --accent-green-bg: #edf7ed;
+  --answered-blue: #0046ad;
+  --answered-blue-bg: #e6f0ff;
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg-color);color:var(--text-color)}
+
+header{background:var(--senai-blue);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:center;gap:15px;box-shadow:0 3px 8px rgba(0,0,0,0.15)}
+.logo{background:var(--senai-red);color:#fff;font-weight:900;font-style:italic;font-size:22px;padding:4px 10px;border-radius:4px}
+h1{margin:0;font-size:22px}
+
+main{max-width:1250px;margin:20px auto;padding:0 15px}
+
+/* HUD / Placar Superior */
+.hud{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:20px;font-weight:bold;color:var(--senai-blue);flex-wrap:wrap;gap:10px}
+.hud-stats{display:flex;gap:15px}
+.stat-correct{color:var(--accent-green);}
+.stat-wrong{color:var(--senai-red);}
+
+/* Layout Principal com Painel Lateral */
+.main-layout{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start}
+
+/* Layout Interno do Jogo (Lado a Lado) */
+.game-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+
+/* Estilo das Cartas */
+.card{background:#fff;border-radius:12px;border:2px solid var(--border-color);padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.08);position:relative;display:flex;flex-direction:column}
+.card-header{font-size:12px;font-weight:bold;color:var(--senai-red);text-transform:uppercase;margin-bottom:8px;letter-spacing:1px}
+.card-title{font-size:18px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px}
+.card-body{font-size:15px;line-height:1.4;color:var(--text-color);flex-grow:1}
+
+/* Coluna de Opções */
+.options-container{display:flex;flex-direction:column;gap:12px}
+.option-card{background:#fff;border:2px solid var(--border-color);border-radius:10px;padding:16px;cursor:pointer;transition:all 0.2s ease;display:flex;flex-direction:column}
+.option-card:hover:not(.disabled){border-color:var(--senai-blue);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,70,173,0.15)}
+
+/* Estilos de Opção Selecionada/Correta */
+.option-card.correct-selected {
+  border: 2px solid var(--accent-green) !important;
+  background-color: var(--accent-green-bg) !important;
+  color: #1b5e20 !important;
+}
+.option-card.wrong-selected {
+  border: 2px solid var(--senai-red) !important;
+  background-color: #fff0ed !important;
+  color: #9b3425 !important;
+}
+
+/* Banner de Resultado */
+.result-banner{display:none;margin-top:15px;padding:12px;border-radius:8px;font-weight:bold;font-size:16px;text-align:center}
+.result-banner.correct{background:var(--accent-green-bg);color:var(--accent-green);border:1px solid var(--accent-green)}
+.result-banner.wrong{background:#fff0ed;color:var(--senai-red);border:1px solid var(--senai-red)}
+
+/* Explicação Pós-Resposta */
+.explanation-box{display:none;margin-top:10px;padding:12px;background:#f8fafc;border-left:4px solid var(--senai-blue);border-radius:4px;font-size:14px;color:var(--text-color)}
+
+/* Botões de Navegação */
+.nav-buttons{display:flex;justify-content:space-between;gap:12px;margin-top:20px;flex-wrap:wrap}
+.btn-nav{padding:12px 20px;border-radius:8px;border:0;font-weight:bold;font-size:15px;cursor:pointer;transition:all 0.2s}
+.btn-prev{background:#e2e8f0;color:var(--text-color)}
+.btn-next{background:var(--senai-blue);color:#fff}
+.btn-finish{background:var(--accent-green);color:#fff}
+.btn-nav:disabled{opacity:0.4;cursor:not-allowed}
+
+/* PAINEL LATERAL DE PROGRESSO */
+.sidebar{background:#fff;border-radius:12px;border:2px solid var(--border-color);padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.sidebar-title{font-size:16px;font-weight:bold;color:var(--senai-blue);margin-bottom:6px;border-bottom:2px solid var(--border-color);padding-bottom:8px}
+.sidebar-counter{font-size:14px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px;background:var(--answered-blue-bg);padding:8px;border-radius:6px;text-align:center}
+.question-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:15px}
+
+/* Badges do Painel Lateral - Destaque Azul para Respondidas */
+.q-badge{height:38px;border-radius:6px;border:1px solid var(--border-color);background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;cursor:pointer;transition:all 0.2s;color:var(--text-color)}
+.q-badge:hover{border-color:var(--senai-blue)}
+.q-badge.current{border:2px solid var(--senai-red);box-shadow:0 0 0 2px rgba(227,6,19,0.2)}
+
+.q-badge.answered{
+  background-color: var(--answered-blue) !important;
+  color: #ffffff !important;
+  border-color: var(--answered-blue) !important;
+  font-weight: 900;
+}
+
+.btn-sidebar-check {
+  width: 100%;
+  padding: 10px;
+  background: var(--accent-green);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.btn-sidebar-check:hover { filter: brightness(1.1); }
+
+/* Modal de Confirmação (Popup) */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;padding:24px;border-radius:12px;width:90%;max-width:400px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.2)}
+.modal-title{font-size:18px;font-weight:bold;color:var(--senai-blue);margin-bottom:12px}
+.modal-buttons{display:flex;justify-content:center;gap:12px;margin-top:20px}
+.btn{padding:10px 20px;border-radius:6px;border:0;font-weight:bold;cursor:pointer;font-size:14px}
+.btn-ok{background:var(--senai-blue);color:#fff}
+.btn-cancel{background:#e2e8f0;color:var(--text-color)}
+
+@media(max-width:900px){
+  .main-layout{grid-template-columns:1fr}
+  .game-container{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SENAI</div>
+  <h1>Desafio: Gestão da Qualidade</h1>
+</header>
+
+<main>
+  <div class="hud">
+    <span id="questionNum">Questão 1 de 20</span>
+    <div class="hud-stats">
+      <span class="stat-correct" id="correctCount">✅ Acertos: 0</span>
+      <span class="stat-wrong" id="wrongCount">❌ Erros: 0</span>
+      <span id="score">Pontos: 0</span>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- Área do Jogo -->
+    <div class="left-content">
+      <div class="game-container">
+        <!-- Carta do Desafio -->
+        <div class="card" id="challengeCard">
+          <div class="card-header" id="challengeCategory">FERRAMENTAS E MÉTODOS</div>
+          <div class="card-title" id="challengeTitle">Desafio Fabril N° 01</div>
+          <div class="card-body" id="challengeText">Carregando desafio...</div>
+        </div>
+
+        <!-- 3 Opções de Resposta -->
+        <div class="options-container" id="optionsContainer"></div>
+      </div>
+
+      <!-- Banner de Resultado -->
+      <div class="result-banner" id="resultBanner"></div>
+
+      <!-- Explicação Técnica -->
+      <div class="explanation-box" id="explanationBox">
+        <strong>💡 Explicação Técnica:</strong>
+        <p id="explanationText" style="margin:5px 0 0 0;"></p>
+      </div>
+
+      <!-- Navegação -->
+      <div class="nav-buttons">
+        <button class="btn-nav btn-prev" id="btnPrev" onclick="prevQuestion()">◀ Anterior</button>
+        <button class="btn-nav btn-next" id="btnNext" onclick="nextQuestion()">Próxima ▶</button>
+        <button class="btn-nav btn-finish" id="btnFinish" onclick="checkFinalResult()">📊 Verificar Resultado Final</button>
+      </div>
+    </div>
+
+    <!-- Painel Lateral -->
+    <aside class="sidebar">
+      <div class="sidebar-title">📋 Progresso</div>
+      <div class="sidebar-counter" id="answeredCount">Respondidas: 0 / 20</div>
+      <div class="question-grid" id="questionGrid"></div>
+      <button class="btn-sidebar-check" onclick="checkFinalResult()">🏆 Concluir & Ver Acertos</button>
+    </aside>
+  </div>
+</main>
+
+<!-- Modal de Confirmação (Popup) -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-title">Está certo de sua escolha?</div>
+    <p id="selectedOptionText" style="font-weight:bold; color:var(--senai-blue);"></p>
+    <div class="modal-buttons">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-ok" onclick="confirmSelection()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const questionsData = [
+  { id: 1, cat: "FERRAMENTAS E MÉTODOS", qNum: "01", q: "A fábrica tem muitas paradas, mas não se sabe quais máquinas causam 80% dos atrasos.", rTitle: "Diagrama de Pareto", rExp: "Ferramenta gráfica que organiza as ocorrências por ordem de frequência para identificar os poucos problemas vitais (regra 80/20)." },
+  { id: 2, cat: "FERRAMENTAS E MÉTODOS", qNum: "02", q: "Um novo lote de eixos apresenta defeitos e a equipe precisa analisar causas em 6 categorias (6M).", rTitle: "Diagrama de Causa e Efeito (Ishikawa)", rExp: "Estrutura para mapear e categorizar causas raízes potenciais em Mão de obra, Máquina, Material, Método, Medida e Meio Ambiente." },
+  { id: 3, cat: "FERRAMENTAS E MÉTODOS", qNum: "03", q: "Um projeto de melhoria foi implantado, mas os resultados não se mantêm; é preciso girar o ciclo de controle.", rTitle: "Ciclo PDCA", rExp: "Metodologia iterativa de quatro etapas (Plan, Do, Check, Act) para a melhoria contínua e padronização de processos." },
+  { id: 4, cat: "FERRAMENTAS E MÉTODOS", qNum: "04", q: "É necessário criar um plano de ação detalhado definindo quem, onde, quando e por que mudar o layout.", rTitle: "5W2H", rExp: "Ferramenta de gestão operacional que estabelece: O que, Por que, Onde, Quando, Quem, Como e Quanto custará a ação." },
+  { id: 5, cat: "FERRAMENTAS E MÉTODOS", qNum: "05", q: "O diâmetro de uma peça de retífica varia muito; é preciso monitorar a estabilidade do processo a cada hora.", rTitle: "Carta de Controle (CEP - Carta X-R)", rExp: "Gráfico estatístico utilizado para acompanhar a variabilidade e manter o processo dentro dos limites especificados." },
+  { id: 6, cat: "FERRAMENTAS E MÉTODOS", qNum: "06", q: "A gerência quer visualizar a distribuição das medidas de um lote para ver se seguem a curva normal.", rTitle: "Histograma", rExp: "Gráfico de barras que exibe a distribuição de frequência de dados quantitativos contínuos de uma amostragem." },
+  { id: 7, cat: "FERRAMENTAS E MÉTODOS", qNum: "07", q: "Antes de iniciar a produção de um novo eixo, a equipe deve prever falhas potenciais e seus riscos.", rTitle: "FMEA (Análise de Modos de Falha e Efeitos)", rExp: "Método preventivo para identificar potenciais modos de falha, avaliar seus riscos e definir ações corretivas prioritárias." },
+  { id: 8, cat: "FERRAMENTAS E MÉTODOS", qNum: "08", q: "Há excesso de estoque entre o torno e a fresadora; a produção deve ser puxada apenas quando necessário.", rTitle: "Sistema Kanban", rExp: "Sistema de sinalização visual (cartões ou painéis) para controlar e puxar o fluxo de produção e estoques em tempo real." },
+  { id: 9, cat: "FERRAMENTAS E MÉTODOS", qNum: "09", q: "O tempo de preparação (setup) de uma prensa é de 1 hora, atrasando o lote; o objetivo é reduzir para minutos.", rTitle: "Metodologia SMED (Troca Rápida)", rExp: "Técnica focada na redução drástica dos tempos de troca de ferramentas e preparação de máquinas na linha." },
+  { id: 10, cat: "FERRAMENTAS E MÉTODOS", qNum: "10", q: "O posto de trabalho está desorganizado, com ferramentas espalhadas, gerando perda de tempo e riscos.", rTitle: "Programa 5S (Organização e Limpeza)", rExp: "Metodologia para organizar, limpar, padronizar e manter a disciplina no ambiente de trabalho (Seiri, Seiton, Seiso, Seiketsu, Shitsuke)." },
+  { id: 11, cat: "OPERAÇÕES FABRIS", qNum: "11", q: "O operador caminha 50 metros entre as máquinas; é preciso otimizar o fluxo físico para reduzir movimentação.", rTitle: "Layout em Célula de Manufatura ('U')", rExp: "Arranjo físico de equipamentos posicionados sequencialmente para otimizar o fluxo contínuo e minimizar o deslocamento." },
+  { id: 12, cat: "OPERAÇÕES FABRIS", qNum: "12", q: "A empresa quer reduzir desperdícios produzindo exatamente a quantidade demandada, no momento certo.", rTitle: "Just-in-Time (JIT)", rExp: "Filosofia de produção focada em eliminar estoques desnecessários e fornecer materiais exatamente quando requisitados." },
+  { id: 13, cat: "OPERAÇÕES FABRIS", qNum: "13", q: "Não se sabe o tempo padrão de uma operação, dificultando o cálculo de metas e custos.", rTitle: "Cronoanálise (Estudo de Tempos e Métodos)", rExp: "Técnica de medição sistemática do tempo necessário para um operador qualificado realizar uma tarefa padronizada." },
+  { id: 14, cat: "OPERAÇÕES FABRIS", qNum: "14", q: "Resíduos de óleo e cavacos estão sendo misturados; é preciso um plano para reduzir e segregar materiais.", rTitle: "Plano de Gestão de Resíduos (5Rs)", rExp: "Conjunto de ações direcionadas ao manejo adequado, redução, reutilização e reciclagem de resíduos do processo fabril." },
+  { id: 15, cat: "OPERAÇÕES FABRIS", qNum: "15", q: "A diretoria precisa decidir se fabrica uma engrenagem internamente ou se contrata um fornecedor externo.", rTitle: "Análise Make or Buy (Fazer ou Comprar)", rExp: "Avaliação estratégica de custos, capacidade produtiva e qualidade para optar pela fabricação própria ou terceirização." },
+  { id: 16, cat: "OPERAÇÕES FABRIS", qNum: "16", q: "Para garantir que a auditoria interna seja padronizada, é preciso uma lista de verificação de itens técnicos.", rTitle: "Checklist de Auditoria", rExp: "Lista estruturada de verificação de itens e critérios para assegurar que processos estejam conformes com os padrões estabelecidos." },
+  { id: 17, cat: "OPERAÇÕES FABRIS", qNum: "17", q: "As medições no setor de metrologia estão imprecisas devido a variações de temperatura e iluminação.", rTitle: "Controle das Condições Ambientais", rExp: "Adequação e monitoramento de fatores como temperatura, umidade e iluminação para garantir a exatidão das medições." },
+  { id: 18, cat: "OPERAÇÕES FABRIS", qNum: "18", q: "É preciso organizar a agenda de produção semanal, alocando operadores e garantindo matéria-prima.", rTitle: "PCP (Planejamento e Controle da Produção)", rExp: "Sistema responsável por gerenciar a alocação de recursos, sequenciamento e programação do fluxo de fabricação." },
+  { id: 19, cat: "OPERAÇÕES FABRIS", qNum: "19", q: "A fábrica quer integrar tecnologias para monitorar a linha em tempo real e aumentar a conectividade.", rTitle: "Conceitos de Indústria 4.0", rExp: "Integração de automação avançada, sensores IoT e análise de dados para criar fábricas inteligentes e interconectadas." },
+  { id: 20, cat: "OPERAÇÕES FABRIS", qNum: "20", q: "Peças prontas não atendem às tolerâncias do desenho; é preciso registrar o erro e propor uma correção.", rTitle: "Tratamento de Não Conformidades", rExp: "Procedimento para identificar, isolar, documentar e corrigir falhas ou desvios de qualidade em produtos e processos." }
+];
+
+let currentIndex = 0;
+let score = 0;
+let correctAnswers = 0;
+let wrongAnswers = 0;
+let pendingOption = null;
+
+// Armazena o estado das escolhas
+let userState = questionsData.map(() => ({
+  options: null,
+  userChoice: null,
+  isCorrect: null
+}));
+
+function updateHUD() {
+  document.getElementById("questionNum").textContent = `Questão ${currentIndex + 1} de ${questionsData.length}`;
+  document.getElementById("correctCount").textContent = `✅ Acertos: ${correctAnswers}`;
+  document.getElementById("wrongCount").textContent = `❌ Erros: ${wrongAnswers}`;
+  document.getElementById("score").textContent = `Pontos: ${score}`;
+
+  // Calcula o número de questões respondidas
+  const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+  document.getElementById("answeredCount").textContent = `Respondidas: ${answeredTotal} / ${questionsData.length}`;
+  
+  renderSidebarGrid();
+}
+
+function renderSidebarGrid() {
+  const grid = document.getElementById("questionGrid");
+  grid.innerHTML = "";
+  
+  questionsData.forEach((q, idx) => {
+    const badge = document.createElement("div");
+    badge.className = "q-badge";
+    if (idx === currentIndex) badge.classList.add("current");
+    
+    const state = userState[idx];
+    // Se a questão já foi respondida, adiciona estilo azul
+    if (state.isCorrect !== null) {
+      badge.classList.add("answered");
+      badge.textContent = `${idx + 1} ✓`;
+    } else {
+      badge.textContent = idx + 1;
+    }
+
+    badge.onclick = () => goToQuestion(idx);
+    grid.appendChild(badge);
+  });
+}
+
+function loadQuestion() {
+  const qData = questionsData[currentIndex];
+  const currentState = userState[currentIndex];
+
+  updateHUD();
+
+  document.getElementById("btnPrev").disabled = (currentIndex === 0);
+  document.getElementById("btnNext").disabled = (currentIndex === questionsData.length - 1);
+
+  document.getElementById("challengeCategory").textContent = qData.cat;
+  document.getElementById("challengeTitle").textContent = `Desafio Fabril N° ${qData.qNum}`;
+  document.getElementById("challengeText").textContent = qData.q;
+
+  // Garante opções fixas na primeira carregada da questão
+  if (!currentState.options) {
+    const options = [qData.rTitle];
+    while (options.length < 3) {
+      const randomQ = questionsData[Math.floor(Math.random() * questionsData.length)];
+      if (!options.includes(randomQ.rTitle)) {
+        options.push(randomQ.rTitle);
+      }
+    }
+    options.sort(() => Math.random() - 0.5);
+    currentState.options = options;
+  }
+
+  // Renderiza Cartões de Opção
+  const container = document.getElementById("optionsContainer");
+  container.innerHTML = "";
+
+  currentState.options.forEach(optText => {
+    const optDiv = document.createElement("div");
+    optDiv.className = "option-card";
+    optDiv.innerHTML = `
+      <div style="font-size:11px; font-weight:bold; color:var(--senai-blue); margin-bottom:4px;">FERRAMENTA / SOLUÇÃO</div>
+      <div style="font-size:16px; font-weight:bold;">${optText}</div>
+    `;
+
+    // Aplica os destaques visuais caso a questão já tenha sido respondida
+    if (currentState.isCorrect !== null) {
+      optDiv.classList.add("disabled");
+      optDiv.style.cursor = "default";
+      
+      if (optText === qData.rTitle) {
+        optDiv.classList.add("correct-selected");
+      } else if (optText === currentState.userChoice && !currentState.isCorrect) {
+        optDiv.classList.add("wrong-selected");
+      }
+    } else {
+      optDiv.onclick = () => openConfirmModal(optText, optDiv);
+    }
+
+    container.appendChild(optDiv);
+  });
+
+  const banner = document.getElementById("resultBanner");
+  const expBox = document.getElementById("explanationBox");
+
+  if (currentState.isCorrect !== null) {
+    banner.style.display = "block";
+    if (currentState.isCorrect) {
+      banner.textContent = "✅ RESPOSTA CORRETA!";
+      banner.className = "result-banner correct";
+    } else {
+      banner.textContent = "❌ RESPOSTA INCORRETA!";
+      banner.className = "result-banner wrong";
+    }
+    document.getElementById("explanationText").textContent = qData.rExp;
+    expBox.style.display = "block";
+  } else {
+    banner.style.display = "none";
+    expBox.style.display = "none";
+  }
+}
+
+function openConfirmModal(optText, element) {
+  pendingOption = { text: optText, element: element };
+  document.getElementById("selectedOptionText").textContent = `"${optText}"`;
+  document.getElementById("confirmModal").classList.add("active");
+}
+
+function closeModal() {
+  document.getElementById("confirmModal").classList.remove("active");
+  pendingOption = null;
+}
+
+// CORREÇÃO PRINCIPAL: Registro imediato da escolha na confirmação do Modal
+function confirmSelection() {
+  if (!pendingOption) return;
+
+  const choiceText = pendingOption.text;
+  closeModal();
+
+  const qData = questionsData[currentIndex];
+  const currentState = userState[currentIndex];
+  
+  // Evita reprocessar se já foi respondida
+  if (currentState.isCorrect !== null) return;
+
+  const isCorrect = (choiceText === qData.rTitle);
+
+  // Registra no estado
+  currentState.userChoice = choiceText;
+  currentState.isCorrect = isCorrect;
+
+  if (isCorrect) {
+    score += 10;
+    correctAnswers++;
+  } else {
+    wrongAnswers++;
+  }
+
+  // Recarrega a tela atualizando os destaques, contadores e o painel em azul
+  loadQuestion();
+}
+
+function goToQuestion(index) {
+  currentIndex = index;
+  loadQuestion();
+}
+
+function prevQuestion() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    loadQuestion();
+  }
+}
+
+function nextQuestion() {
+  if (currentIndex < questionsData.length - 1) {
+    currentIndex++;
+    loadQuestion();
+  }
+}
+
+function checkFinalResult() {
+  const answeredTotal = userState.filter(s => s.isCorrect !== null).length;
+  alert(`📊 RESUMO DO DESAFIO:\n\nRespondidas: ${answeredTotal} de ${questionsData.length}\n✅ Acertos: ${correctAnswers}\n❌ Erros: ${wrongAnswers}\n🏆 Pontuação Final: ${score} pontos`);
+}
+
+// Inicialização
+loadQuestion();
+</script>
+
+</body>
+</html>
