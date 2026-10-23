@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passa ou Repassa — Torta na Cara SGQ (2 Equipes)</title>
+    <title>Passa ou Repassa — Torta na Cara SGQ (Aleatório sem Repetição)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- PeerJS para Conexão em Rede P2P -->
@@ -85,7 +85,7 @@
         <h1 class="text-3xl md:text-5xl font-black font-impact text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 tracking-wider uppercase drop-shadow-md">
             🥧 PASSA OU REPASSA SGQ
         </h1>
-        <p class="text-xs md:text-sm text-slate-300 font-semibold">Duelo Direto Entre 2 Equipes em Tempo Real (P2P)</p>
+        <p class="text-xs md:text-sm text-slate-300 font-semibold">Sorteio Aleatório de Questões Sem Repetição & Conexão em Tempo Real</p>
     </header>
 
     <!-- TELA DE CONEXÃO E SELEÇÃO DE PAPEL -->
@@ -121,18 +121,21 @@
     <!-- TELA PRINCIPAL DO JOGO -->
     <div id="screen-game" class="hidden w-full max-w-6xl flex-col gap-4 my-auto">
 
-        <!-- PAINEL SUPERIOR: TOKEN DA SALA E PLACAR DAS 2 EQUIPES -->
+        <!-- PAINEL SUPERIOR: TOKEN DA SALA, PLACAR E PROGRESSO DO BANCO -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-3">
                 <div class="flex items-center gap-2">
                     <span class="text-xs text-slate-400">Token da Sala:</span>
                     <span id="room-code-display" class="bg-amber-500/20 border border-amber-500/40 text-amber-400 font-mono font-black text-xs md:text-sm px-3 py-1 rounded-lg">---</span>
                 </div>
-                <div id="role-display" class="text-xs font-bold px-3 py-1 rounded-lg bg-slate-800 text-cyan-400">Apresentador</div>
+                <div class="flex items-center gap-2">
+                    <span id="question-progress-display" class="bg-slate-800 text-amber-400 text-xs font-bold px-3 py-1 rounded-lg border border-slate-700">📋 Questão 1 / 10</span>
+                    <div id="role-display" class="text-xs font-bold px-3 py-1 rounded-lg bg-slate-800 text-cyan-400">Apresentador</div>
+                </div>
             </div>
 
-            <!-- Placar das 2 Equipes -->
-            <div class="grid grid-cols-2 gap-4 text-center">
+            <!-- Placar Geral das 2 Equipes -->
+            <div class="grid grid-cols-2 gap-4 text-center mb-3">
                 <div class="team-card-blue p-4 rounded-2xl">
                     <div class="text-xs md:text-sm font-black text-blue-400 uppercase">Equipe Azul</div>
                     <div id="score-blue" class="text-3xl md:text-5xl font-black text-white">0</div>
@@ -142,12 +145,22 @@
                     <div id="score-red" class="text-3xl md:text-5xl font-black text-white">0</div>
                 </div>
             </div>
+
+            <!-- PLACAR DE DESEMPENHO INDIVIDUAL DOS JOGADORES -->
+            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
+                <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 text-center">
+                    📊 Desempenho dos Jogadores (Acionamentos do Botão)
+                </h4>
+                <div id="player-stats-list" class="flex flex-wrap justify-center gap-2 text-xs font-bold">
+                    <span class="text-slate-500">Nenhum jogador conectado no momento...</span>
+                </div>
+            </div>
         </div>
 
         <!-- LAYOUT DE 2 COLUNAS: PAINEL LATERAL DE ALTERNATIVAS + PAINEL DE AÇÃO -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             
-            <!-- LATERAL ESQUERDA: ALTERNATIVAS DA PERGUNTA (LIBERADAS APÓS BATER NO BOTÃO) -->
+            <!-- LATERAL ESQUERDA: ALTERNATIVAS DA PERGUNTA -->
             <div class="lg:col-span-1 bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col justify-between">
                 <div>
                     <h4 class="text-xs font-black text-amber-400 uppercase tracking-wider mb-3 pb-2 border-b border-slate-800 text-center">
@@ -205,6 +218,10 @@
                         </button>
                         <button onclick="resetBuzzer()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs md:text-sm cursor-pointer">
                             🔄 Liberar Botoes
+                        </button>
+                        <!-- BOTÃO EXCLUSIVO DE REINICIAR -->
+                        <button onclick="restartFullGame()" class="bg-red-700 hover:bg-red-600 text-white font-black px-4 py-2.5 rounded-xl text-xs md:text-sm uppercase tracking-wider shadow-lg cursor-pointer border border-red-500">
+                            💥 Reiniciar Partida
                         </button>
                     </div>
 
@@ -282,8 +299,8 @@
             setTimeout(() => playSound(783, 'triangle', 0.3), 300);
         }
 
-        /* BANCO DE QUESTÕES COM 4 ALTERNATIVAS REAIS CADA */
-        const questions = [
+        /* BANCO COMPLETO DE QUESTÕES (SGQ) */
+        const rawQuestionBank = [
             {
                 q: "Qual ferramenta visual é utilizada para estratificar dados e identificar os 20% das causas responsáveis por 80% dos problemas?",
                 options: ["Diagrama de Ishikawa", "Diagrama de Pareto", "Matriz GUT", "Histograma"],
@@ -342,13 +359,16 @@
         let hostConn = null;
         let isHost = false;
         let isAnswerRevealed = false;
-        let selectedOptionIdx = null; // Alternativa selecionada pela equipe ativa
+        let selectedOptionIdx = null;
         
         let myPlayerName = "";
         let myTeam = null; // 'blue', 'red'
 
-        let currentQuestionIndex = 0;
+        let shuffledQuestions = []; // Baralho sorteado sem repetição
+        let currentQuestionIndex = 0; // Índice da pergunta ativa na lista sorteada
+        
         let scores = { blue: 0, red: 0 };
+        let playerStats = {}; // { "NomeDoJogador": { team: 'blue', buzzes: 3 } }
         let activeBuzzer = null; // { player: 'Nome', team: 'blue' }
         let passState = 0; // 0: Normal, 1: Passou, 2: Repassou
 
@@ -359,11 +379,38 @@
 
         const teamsList = ['blue', 'red'];
 
+        /* FUNÇÃO PARA EMBARALHAR QUESTÕES (ALGORITMO FISHER-YATES) */
+        function shuffleArray(array) {
+            let shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        /* VERIFICA E EXECUTA AUTOCONEXÃO AO CARREGAR A PÁGINA */
+        window.addEventListener('load', () => {
+            const savedData = sessionStorage.getItem('sgq_torta_session');
+            if (savedData) {
+                const session = JSON.parse(savedData);
+                if (session.role === 'player' && session.roomCode && session.team) {
+                    document.getElementById('input-player-name').value = session.name || "";
+                    document.getElementById('input-room-code').value = session.roomCode || "";
+                    joinAsPlayer(session.team, true);
+                }
+            }
+        });
+
         /* CRIAR SALA (APRESENTADOR) */
         function createRoom() {
             isHost = true;
             const roomCode = "TORTA-" + Math.floor(1000 + Math.random() * 9000);
             peer = new Peer(roomCode);
+
+            // Sorteia o baralho de questões inicialmente
+            shuffledQuestions = shuffleArray(rawQuestionBank);
+            currentQuestionIndex = 0;
 
             peer.on('open', id => {
                 document.getElementById('screen-network').classList.add('hidden');
@@ -379,11 +426,14 @@
             peer.on('connection', conn => {
                 connections.push(conn);
                 conn.on('data', data => handleNetworkData(data));
+                conn.on('open', () => {
+                    broadcastState();
+                });
             });
         }
 
-        /* ENTRAR COMO JOGADOR */
-        function joinAsPlayer(team) {
+        /* ENTRAR COMO JOGADOR (COM AUTOCONEXÃO) */
+        function joinAsPlayer(team, isAutoReconnect = false) {
             myPlayerName = document.getElementById('input-player-name').value.trim() || "Jogador";
             myTeam = team;
             isHost = false;
@@ -394,6 +444,13 @@
                 alert("Por favor, insira o código da sala!");
                 return;
             }
+
+            sessionStorage.setItem('sgq_torta_session', JSON.stringify({
+                role: 'player',
+                name: myPlayerName,
+                team: myTeam,
+                roomCode: roomCode
+            }));
 
             peer = new Peer();
             peer.on('open', () => {
@@ -416,16 +473,28 @@
         function handleNetworkData(data) {
             if (data.type === 'STATE_UPDATE') {
                 scores = data.scores;
+                shuffledQuestions = data.shuffledQuestions || rawQuestionBank;
                 currentQuestionIndex = data.qIndex;
                 activeBuzzer = data.activeBuzzer;
                 passState = data.passState;
                 isAnswerRevealed = data.isAnswerRevealed;
                 selectedOptionIdx = data.selectedOptionIdx;
+                playerStats = data.playerStats || {};
 
                 updateUI();
+            } else if (data.type === 'JOIN' && isHost) {
+                if (!playerStats[data.name]) {
+                    playerStats[data.name] = { team: data.team, buzzes: 0 };
+                }
+                broadcastState();
             } else if (data.type === 'BUZZER_PRESSED' && isHost) {
                 if (!activeBuzzer) {
                     activeBuzzer = { player: data.name, team: data.team };
+                    if (playerStats[data.name]) {
+                        playerStats[data.name].buzzes += 1;
+                    } else {
+                        playerStats[data.name] = { team: data.team, buzzes: 1 };
+                    }
                     playBuzzerSound();
                     broadcastState();
                 }
@@ -442,11 +511,13 @@
         function broadcastState() {
             const state = {
                 scores: scores,
+                shuffledQuestions: shuffledQuestions,
                 qIndex: currentQuestionIndex,
                 activeBuzzer: activeBuzzer,
                 passState: passState,
                 isAnswerRevealed: isAnswerRevealed,
-                selectedOptionIdx: selectedOptionIdx
+                selectedOptionIdx: selectedOptionIdx,
+                playerStats: playerStats
             };
             updateUI();
             connections.forEach(c => c.open && c.send({ type: 'STATE_UPDATE', ...state }));
@@ -465,7 +536,6 @@
         }
 
         function selectOption(idx) {
-            // Apenas a equipe ativa (ou o Apresentador) pode clicar para selecionar uma alternativa
             if (!activeBuzzer) return;
             if (!isHost && myTeam !== activeBuzzer.team) return;
 
@@ -480,13 +550,36 @@
         }
 
         function updateUI() {
-            // Atualiza Placar das 2 Equipes
+            // Atualiza Placar Geral das 2 Equipes
             document.getElementById('score-blue').innerText = scores.blue;
             document.getElementById('score-red').innerText = scores.red;
 
-            // Atualiza Pergunta
-            const q = questions[currentQuestionIndex];
-            document.getElementById('question-text').innerText = q ? q.q : "Fim do Jogo!";
+            // Atualiza Progresso das Questões no Topo
+            const totalQ = shuffledQuestions.length > 0 ? shuffledQuestions.length : rawQuestionBank.length;
+            document.getElementById('question-progress-display').innerText = `📋 Questão ${currentQuestionIndex + 1} / ${totalQ}`;
+
+            // Atualiza Placar de Desempenho Individual dos Jogadores
+            const statsList = document.getElementById('player-stats-list');
+            const playerKeys = Object.keys(playerStats);
+            if (playerKeys.length > 0) {
+                statsList.innerHTML = '';
+                playerKeys.forEach(pName => {
+                    const pData = playerStats[pName];
+                    const badgeColor = pData.team === 'blue' ? 'bg-blue-900/80 border-blue-500 text-blue-300' : 'bg-red-900/80 border-red-500 text-red-300';
+                    statsList.innerHTML += `
+                        <div class="border px-3 py-1 rounded-xl flex items-center gap-2 ${badgeColor}">
+                            <span>👤 ${pName}</span>
+                            <span class="bg-black/40 px-2 py-0.5 rounded-lg text-[10px]">🔔 ${pData.buzzes}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                statsList.innerHTML = `<span class="text-slate-500">Nenhum jogador conectado no momento...</span>`;
+            }
+
+            // Atualiza Pergunta Atual Sorteada
+            const q = shuffledQuestions[currentQuestionIndex];
+            document.getElementById('question-text').innerText = q ? q.q : "Fim das Perguntas! O banco foi concluído.";
 
             const optionsContainer = document.getElementById('options-container');
             const optionsLockedMsg = document.getElementById('options-locked-msg');
@@ -586,7 +679,7 @@
                 passState = 1;
                 let nextIdx = (teamsList.indexOf(activeBuzzer.team) + 1) % teamsList.length;
                 activeBuzzer = { player: "Equipe Desafiada", team: teamsList[nextIdx] };
-                selectedOptionIdx = null; // Reseta seleção na troca
+                selectedOptionIdx = null;
                 broadcastState();
             }
         }
@@ -596,19 +689,47 @@
                 passState = 2;
                 let prevIdx = (teamsList.indexOf(activeBuzzer.team) + teamsList.length - 1) % teamsList.length;
                 activeBuzzer = { player: "Equipe Obrigada a Responder", team: teamsList[prevIdx] };
-                selectedOptionIdx = null; // Reseta seleção na troca
+                selectedOptionIdx = null;
                 broadcastState();
             }
         }
 
+        /* AVANÇAR PARA A PRÓXIMA PERGUNTA SEM REPETIÇÃO */
         function nextQuestion() {
-            currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
+            if (!isHost) return;
+
+            // Se ainda não cobriu todo o banco, avança para a próxima da lista sorteada
+            if (currentQuestionIndex < shuffledQuestions.length - 1) {
+                currentQuestionIndex++;
+            } else {
+                // Ao fim das perguntas, reembaralha o banco para uma nova rodada
+                alert("🎉 Todas as perguntas do banco foram respondidas! O banco foi reembaralhado automaticamente para um novo ciclo.");
+                shuffledQuestions = shuffleArray(rawQuestionBank);
+                currentQuestionIndex = 0;
+            }
+
             isAnswerRevealed = false;
             resetRound();
         }
 
         function resetBuzzer() {
             resetRound();
+        }
+
+        /* REINICIAR COMPLETAMENTE O JOGO (REEMBARALHA O BANCO DE PERGUNTAS) */
+        function restartFullGame() {
+            if (!isHost) return;
+            if (confirm("Tem certeza que deseja reiniciar o placar e reembaralhar todas as perguntas do zero?")) {
+                scores = { blue: 0, red: 0 };
+                shuffledQuestions = shuffleArray(rawQuestionBank);
+                currentQuestionIndex = 0;
+                activeBuzzer = null;
+                passState = 0;
+                isAnswerRevealed = false;
+                selectedOptionIdx = null;
+                Object.keys(playerStats).forEach(p => playerStats[p].buzzes = 0);
+                broadcastState();
+            }
         }
 
         function resetRound() {
