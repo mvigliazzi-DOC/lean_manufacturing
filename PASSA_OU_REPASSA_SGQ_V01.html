@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passa ou Repassa — Torta na Cara SGQ (2 Equipes)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PeerJS para Conexão em Rede P2P -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Montserrat:wght@800;900&display=swap');
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .font-impact {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* Botão Buzzer Gigante de Bater */
+        .btn-buzzer {
+            background: radial-gradient(circle at 30% 30%, #ef4444, #991b1b);
+            border: 6px solid #f87171;
+            box-shadow: 0 12px 0 #7f1d1d, 0 20px 25px rgba(0, 0, 0, 0.6);
+            transition: all 0.1s ease;
+        }
+
+        .btn-buzzer:active:not(:disabled) {
+            transform: translateY(8px);
+            box-shadow: 0 4px 0 #7f1d1d, 0 10px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-buzzer:disabled {
+            background: #475569 !important;
+            border-color: #64748b !important;
+            box-shadow: none !important;
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Cards das 2 Equipes */
+        .team-card-blue { background: rgba(30, 58, 138, 0.6); border: 2px solid #3b82f6; }
+        .team-card-red { background: rgba(153, 27, 27, 0.6); border: 2px solid #ef4444; }
+
+        /* Estilo das Opções / Alternativas */
+        .opt-card {
+            background: #0f172a;
+            border: 1.5px solid #334155;
+            transition: all 0.2s ease;
+        }
+
+        .opt-card.selected-highlight {
+            border-color: #f59e0b !important;
+            background-color: rgba(245, 158, 11, 0.2) !important;
+            color: #fbbf24 !important;
+        }
+
+        .opt-card.correct-highlight {
+            border-color: #22c55e !important;
+            background-color: rgba(34, 197, 94, 0.2) !important;
+            color: #4ade80 !important;
+        }
+
+        /* Animação Torta na Cara */
+        @keyframes pie-splat {
+            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+            50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .splat-animation {
+            animation: pie-splat 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 flex flex-col justify-between items-center min-h-screen">
+
+    <!-- CABEÇALHO -->
+    <header class="text-center w-full max-w-6xl mb-3">
+        <h1 class="text-3xl md:text-5xl font-black font-impact text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 tracking-wider uppercase drop-shadow-md">
+            🥧 PASSA OU REPASSA SGQ
+        </h1>
+        <p class="text-xs md:text-sm text-slate-300 font-semibold">Duelo Direto Entre 2 Equipes em Tempo Real (P2P)</p>
+    </header>
+
+    <!-- TELA DE CONEXÃO E SELEÇÃO DE PAPEL -->
+    <div id="screen-network" class="w-full max-w-xl bg-slate-900/90 border-2 border-amber-500/60 rounded-3xl p-6 text-center shadow-2xl my-auto">
+        <div class="text-5xl mb-3">🎙️</div>
+        <h2 class="text-2xl font-bold text-amber-400 mb-2">Entrar no Programa</h2>
+        <p class="text-slate-300 text-xs md:text-sm mb-6">Escolha se você será o Apresentador (Controlador) ou um Jogador de uma das equipes.</p>
+
+        <div class="space-y-4">
+            <!-- Criar Sala (Apresentador) -->
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                <button onclick="createRoom()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black py-3 rounded-xl text-base uppercase tracking-wider transition-all shadow-lg cursor-pointer">
+                    🎤 Criar Sala como Apresentador
+                </button>
+            </div>
+
+            <div class="text-xs text-slate-500 font-bold">--- OU ENTRAR COMO JOGADOR ---</div>
+
+            <!-- Entrar como Jogador -->
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <input type="text" id="input-player-name" placeholder="Seu Nome / Apelido" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm font-bold text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+                <input type="text" id="input-room-code" placeholder="Código do Token (ex: TORTA-1234)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm font-bold uppercase tracking-widest text-amber-400 placeholder-slate-600 focus:outline-none focus:border-amber-500">
+                
+                <p class="text-xs text-slate-400 font-semibold mb-1">Selecione a sua Equipe:</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="joinAsPlayer('blue')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-sm cursor-pointer shadow-md">Equipe Azul</button>
+                    <button onclick="joinAsPlayer('red')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl text-sm cursor-pointer shadow-md">Equipe Vermelha</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA PRINCIPAL DO JOGO -->
+    <div id="screen-game" class="hidden w-full max-w-6xl flex-col gap-4 my-auto">
+
+        <!-- PAINEL SUPERIOR: TOKEN DA SALA E PLACAR DAS 2 EQUIPES -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400">Token da Sala:</span>
+                    <span id="room-code-display" class="bg-amber-500/20 border border-amber-500/40 text-amber-400 font-mono font-black text-xs md:text-sm px-3 py-1 rounded-lg">---</span>
+                </div>
+                <div id="role-display" class="text-xs font-bold px-3 py-1 rounded-lg bg-slate-800 text-cyan-400">Apresentador</div>
+            </div>
+
+            <!-- Placar das 2 Equipes -->
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <div class="team-card-blue p-4 rounded-2xl">
+                    <div class="text-xs md:text-sm font-black text-blue-400 uppercase">Equipe Azul</div>
+                    <div id="score-blue" class="text-3xl md:text-5xl font-black text-white">0</div>
+                </div>
+                <div class="team-card-red p-4 rounded-2xl">
+                    <div class="text-xs md:text-sm font-black text-red-400 uppercase">Equipe Vermelha</div>
+                    <div id="score-red" class="text-3xl md:text-5xl font-black text-white">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LAYOUT DE 2 COLUNAS: PAINEL LATERAL DE ALTERNATIVAS + PAINEL DE AÇÃO -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            
+            <!-- LATERAL ESQUERDA: ALTERNATIVAS DA PERGUNTA (LIBERADAS APÓS BATER NO BOTÃO) -->
+            <div class="lg:col-span-1 bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col justify-between">
+                <div>
+                    <h4 class="text-xs font-black text-amber-400 uppercase tracking-wider mb-3 pb-2 border-b border-slate-800 text-center">
+                        📋 Alternativas da Pergunta
+                    </h4>
+
+                    <!-- MENSAGEM QUANDO AS ALTERNATIVAS ESTÃO BLOQUEADAS -->
+                    <div id="options-locked-msg" class="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-2xl">
+                        🔒 Aperte o botão <strong class="text-amber-400">"BATER!"</strong> primeiro para liberar as alternativas da pergunta!
+                    </div>
+
+                    <!-- CONTAINER DAS ALTERNATIVAS (LIBERADO APÓS BATER) -->
+                    <div id="options-container" class="hidden flex flex-col gap-2">
+                        <!-- Alternativas injetadas via JS -->
+                    </div>
+                </div>
+
+                <div id="answer-reveal" class="hidden mt-3 p-3 bg-slate-950 border border-green-500/50 rounded-xl text-green-400 text-xs font-bold text-center">
+                    💡 Gabarito: <span id="answer-text">---</span>
+                </div>
+            </div>
+
+            <!-- LATERAL DIREITA: PERGUNTA + BUZZER + CONTROLES DO APRESENTADOR -->
+            <div class="lg:col-span-2 bg-slate-900/90 border-2 border-amber-500/80 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-between min-h-[360px] text-center relative overflow-hidden">
+                
+                <!-- Banner de Alerta / Quem Bateu Primeiro -->
+                <div id="status-banner" class="bg-amber-500 text-slate-950 font-black text-xs md:text-sm px-4 py-1.5 rounded-full uppercase tracking-wider mb-3">
+                    Aguardando Pergunta do Apresentador
+                </div>
+
+                <!-- Pergunta Atual -->
+                <div id="question-box" class="my-auto w-full">
+                    <h3 id="question-text" class="text-lg md:text-2xl font-bold text-slate-100 leading-relaxed">
+                        O Apresentador irá liberar a pergunta!
+                    </h3>
+                </div>
+
+                <!-- VISÃO DO JOGADOR: BOTÃO BUZZER INDIVIDUAL -->
+                <div id="player-controls" class="hidden my-4 w-full flex flex-col items-center">
+                    <button id="btn-buzzer" onclick="pressBuzzer()" class="btn-buzzer w-44 h-44 md:w-52 md:h-52 rounded-full font-impact text-2xl md:text-3xl text-white uppercase tracking-wider flex items-center justify-center cursor-pointer">
+                        BATER! 🔔
+                    </button>
+                </div>
+
+                <!-- PAINEL DE CONTROLE EXCLUSIVO DO APRESENTADOR -->
+                <div id="host-controls" class="hidden w-full flex-col gap-3 mt-4 pt-4 border-t border-slate-800">
+                    
+                    <!-- Botões do Ciclo da Pergunta -->
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button onclick="nextQuestion()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs md:text-sm uppercase tracking-wider shadow-lg cursor-pointer">
+                            ▶️ Próxima Pergunta
+                        </button>
+                        <button onclick="toggleAnswer()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs md:text-sm cursor-pointer">
+                            👁️ Revelar Gabarito
+                        </button>
+                        <button onclick="resetBuzzer()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs md:text-sm cursor-pointer">
+                            🔄 Liberar Botoes
+                        </button>
+                    </div>
+
+                    <!-- Botões de Decisão do Apresentador (Acerto, Torta, Passa) -->
+                    <div id="host-actions" class="flex flex-wrap justify-center gap-2 pt-2">
+                        <button onclick="handleCorrect()" class="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-xl text-xs md:text-sm cursor-pointer">
+                            ✅ Acertou (+100)
+                        </button>
+                        <button onclick="handleWrong()" class="bg-red-600 hover:bg-red-500 text-white font-bold px-4 py-2 rounded-xl text-xs md:text-sm cursor-pointer">
+                            🥧 Errou / Torta (-100)
+                        </button>
+                        <button id="btn-pass" onclick="handlePass()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs md:text-sm cursor-pointer">
+                            ➡️ PASSA
+                        </button>
+                        <button id="btn-repass" onclick="handleRepass()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2 rounded-xl text-xs md:text-sm cursor-pointer hidden">
+                            🔄 REPASSA!
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP DE TORTA NA CARA -->
+    <div id="modal-splat" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="text-center splat-animation">
+            <div class="text-8xl md:text-9xl mb-2">🥧💥</div>
+            <h2 class="text-3xl md:text-5xl font-black font-impact text-amber-400 uppercase tracking-wider drop-shadow-lg">
+                TORTA NA CARA!
+            </h2>
+            <p id="splat-team-text" class="text-lg text-white font-bold mt-2">Equipe Penalizada!</p>
+            <button onclick="closeModal('modal-splat')" class="mt-6 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3 rounded-xl text-sm uppercase cursor-pointer">
+                Continuar o Programa
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* SINTETIZADOR DE ÁUDIO WEB AUDIO API */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+
+        function playSound(freq, type, duration) {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playBuzzerSound() {
+            playSound(800, 'square', 0.3);
+            setTimeout(() => playSound(600, 'square', 0.4), 100);
+        }
+
+        function playSplatSound() {
+            playSound(150, 'sawtooth', 0.4);
+            setTimeout(() => playSound(100, 'sawtooth', 0.5), 100);
+        }
+
+        function playSuccessSound() {
+            playSound(523, 'triangle', 0.15);
+            setTimeout(() => playSound(659, 'triangle', 0.15), 150);
+            setTimeout(() => playSound(783, 'triangle', 0.3), 300);
+        }
+
+        /* BANCO DE QUESTÕES COM 4 ALTERNATIVAS REAIS CADA */
+        const questions = [
+            {
+                q: "Qual ferramenta visual é utilizada para estratificar dados e identificar os 20% das causas responsáveis por 80% dos problemas?",
+                options: ["Diagrama de Ishikawa", "Diagrama de Pareto", "Matriz GUT", "Histograma"],
+                correct: 1
+            },
+            {
+                q: "O que significam, sequencialmente, as quatro etapas do ciclo contínuo PDCA?",
+                options: ["Plan, Do, Check, Act", "Produce, Direct, Control, Analyze", "Process, Data, Quality, Action", "Prevent, Detect, Correct, Adjust"],
+                correct: 0
+            },
+            {
+                q: "Qual é o foco principal do programa 5S no ambiente operacional fabril?",
+                options: ["Mapear processos de TI", "Organização, Limpeza, Padronização e Disciplina", "Calcular a folha de pagamento", "Desenvolver projetos de software"],
+                correct: 1
+            },
+            {
+                q: "No Diagrama de Causa e Efeito (Ishikawa), qual 'M' analisa problemas em prensas, tornos e ferramentas?",
+                options: ["Mão de Obra", "Método", "Máquina", "Medida"],
+                correct: 2
+            },
+            {
+                q: "Qual a função do dispositivo conhecido no Lean como 'Poka-Yoke'?",
+                options: ["Trocar moldes em menos de 10 minutos", "Prevenir a ocorrência ou passagem de erros humanos", "Calcular a depreciação do equipamento", "Emitir faturas de entrega"],
+                correct: 1
+            },
+            {
+                q: "O que autoriza a produção e a movimentação de itens no sistema de produção puxada?",
+                options: ["Cartão Kanban", "Ordem do Diretor de Vendas", "Plano de Treinamento", "Relatório do CCQ"],
+                correct: 0
+            },
+            {
+                q: "Na ferramenta de plano de ação 5W2H, o que representa a letra 'W' da palavra 'Why'?",
+                options: ["Quem executará a tarefa", "Onde a ação será aplicada", "Por que a ação será realizada (Justificativa)", "Quando será finalizada"],
+                correct: 2
+            },
+            {
+                q: "No estudo de FMEA, o RPN (Número de Prioridade de Risco) é calculado multiplicando Severidade, Ocorrência e qual outro fator?",
+                options: ["Detecção", "Custo do Material", "Tempo de Peça", "Quantidade de Operadores"],
+                correct: 0
+            },
+            {
+                q: "O indicador OEE (Overall Equipment Effectiveness) analisa a multiplicação entre Disponibilidade, Qualidade e qual outro parâmetro?",
+                options: ["Desempenho (Performance)", "Lucratividade", "Estoque de Segurança", "Taxa de Absenteísmo"],
+                correct: 0
+            },
+            {
+                q: "Um processo que opera com nível de qualidade 6 Sigma aceita estatisticamente no máximo quantos defeitos?",
+                options: ["3,4 Defeitos por Milhão de Oportunidades (DPMO)", "66.807 DPMO", "340 Defeitos por Milhão", "Zero defeitos em qualquer condição"],
+                correct: 0
+            }
+        ];
+
+        /* ESTADO DO JOGO E REDE P2P */
+        let peer = null;
+        let connections = [];
+        let hostConn = null;
+        let isHost = false;
+        let isAnswerRevealed = false;
+        let selectedOptionIdx = null; // Alternativa selecionada pela equipe ativa
+        
+        let myPlayerName = "";
+        let myTeam = null; // 'blue', 'red'
+
+        let currentQuestionIndex = 0;
+        let scores = { blue: 0, red: 0 };
+        let activeBuzzer = null; // { player: 'Nome', team: 'blue' }
+        let passState = 0; // 0: Normal, 1: Passou, 2: Repassou
+
+        const teamNames = { 
+            blue: "Equipe Azul", 
+            red: "Equipe Vermelha"
+        };
+
+        const teamsList = ['blue', 'red'];
+
+        /* CRIAR SALA (APRESENTADOR) */
+        function createRoom() {
+            isHost = true;
+            const roomCode = "TORTA-" + Math.floor(1000 + Math.random() * 9000);
+            peer = new Peer(roomCode);
+
+            peer.on('open', id => {
+                document.getElementById('screen-network').classList.add('hidden');
+                document.getElementById('screen-game').classList.remove('hidden');
+                document.getElementById('screen-game').classList.add('flex');
+                document.getElementById('room-code-display').innerText = id;
+                document.getElementById('role-display').innerText = "🎙️ Apresentador";
+                document.getElementById('host-controls').classList.remove('hidden');
+                document.getElementById('host-controls').classList.add('flex');
+                broadcastState();
+            });
+
+            peer.on('connection', conn => {
+                connections.push(conn);
+                conn.on('data', data => handleNetworkData(data));
+            });
+        }
+
+        /* ENTRAR COMO JOGADOR */
+        function joinAsPlayer(team) {
+            myPlayerName = document.getElementById('input-player-name').value.trim() || "Jogador";
+            myTeam = team;
+            isHost = false;
+            
+            const roomCode = document.getElementById('input-room-code').value.trim().toUpperCase();
+
+            if (!roomCode) {
+                alert("Por favor, insira o código da sala!");
+                return;
+            }
+
+            peer = new Peer();
+            peer.on('open', () => {
+                hostConn = peer.connect(roomCode);
+                hostConn.on('open', () => {
+                    document.getElementById('screen-network').classList.add('hidden');
+                    document.getElementById('screen-game').classList.remove('hidden');
+                    document.getElementById('screen-game').classList.add('flex');
+                    document.getElementById('room-code-display').innerText = roomCode;
+                    document.getElementById('role-display').innerText = `🎮 ${myPlayerName} (${teamNames[team]})`;
+                    document.getElementById('player-controls').classList.remove('hidden');
+
+                    hostConn.send({ type: 'JOIN', name: myPlayerName, team: myTeam });
+                });
+
+                hostConn.on('data', data => handleNetworkData(data));
+            });
+        }
+
+        function handleNetworkData(data) {
+            if (data.type === 'STATE_UPDATE') {
+                scores = data.scores;
+                currentQuestionIndex = data.qIndex;
+                activeBuzzer = data.activeBuzzer;
+                passState = data.passState;
+                isAnswerRevealed = data.isAnswerRevealed;
+                selectedOptionIdx = data.selectedOptionIdx;
+
+                updateUI();
+            } else if (data.type === 'BUZZER_PRESSED' && isHost) {
+                if (!activeBuzzer) {
+                    activeBuzzer = { player: data.name, team: data.team };
+                    playBuzzerSound();
+                    broadcastState();
+                }
+            } else if (data.type === 'SELECT_OPTION') {
+                if (isHost && activeBuzzer && data.team === activeBuzzer.team) {
+                    selectedOptionIdx = data.optionIdx;
+                    broadcastState();
+                }
+            } else if (data.type === 'SPLAT_ANIM') {
+                showSplatModal(data.team, data.player);
+            }
+        }
+
+        function broadcastState() {
+            const state = {
+                scores: scores,
+                qIndex: currentQuestionIndex,
+                activeBuzzer: activeBuzzer,
+                passState: passState,
+                isAnswerRevealed: isAnswerRevealed,
+                selectedOptionIdx: selectedOptionIdx
+            };
+            updateUI();
+            connections.forEach(c => c.open && c.send({ type: 'STATE_UPDATE', ...state }));
+        }
+
+        function pressBuzzer() {
+            if (!activeBuzzer) {
+                playBuzzerSound();
+                if (isHost) {
+                    activeBuzzer = { player: "Apresentador", team: "blue" };
+                    broadcastState();
+                } else if (hostConn && hostConn.open) {
+                    hostConn.send({ type: 'BUZZER_PRESSED', name: myPlayerName, team: myTeam });
+                }
+            }
+        }
+
+        function selectOption(idx) {
+            // Apenas a equipe ativa (ou o Apresentador) pode clicar para selecionar uma alternativa
+            if (!activeBuzzer) return;
+            if (!isHost && myTeam !== activeBuzzer.team) return;
+
+            selectedOptionIdx = idx;
+            playSound(400, 'sine', 0.08);
+
+            if (isHost) {
+                broadcastState();
+            } else if (hostConn && hostConn.open) {
+                hostConn.send({ type: 'SELECT_OPTION', team: myTeam, optionIdx: idx });
+            }
+        }
+
+        function updateUI() {
+            // Atualiza Placar das 2 Equipes
+            document.getElementById('score-blue').innerText = scores.blue;
+            document.getElementById('score-red').innerText = scores.red;
+
+            // Atualiza Pergunta
+            const q = questions[currentQuestionIndex];
+            document.getElementById('question-text').innerText = q ? q.q : "Fim do Jogo!";
+
+            const optionsContainer = document.getElementById('options-container');
+            const optionsLockedMsg = document.getElementById('options-locked-msg');
+
+            // LIBERA AS ALTERNATIVAS SOMENTE APÓS ALGUMA EQUIPE BATER NO BOTÃO
+            if (!activeBuzzer) {
+                optionsLockedMsg.classList.remove('hidden');
+                optionsContainer.classList.add('hidden');
+            } else {
+                optionsLockedMsg.classList.add('hidden');
+                optionsContainer.classList.remove('hidden');
+                optionsContainer.innerHTML = '';
+
+                if (q) {
+                    const letters = ['A', 'B', 'C', 'D'];
+                    q.options.forEach((optText, idx) => {
+                        const optDiv = document.createElement('div');
+                        
+                        let isSelectedClass = (selectedOptionIdx === idx) ? 'selected-highlight' : '';
+                        let isCorrectClass = (isAnswerRevealed && idx === q.correct) ? 'correct-highlight' : '';
+
+                        optDiv.onclick = () => selectOption(idx);
+                        optDiv.className = `opt-card p-3 rounded-xl text-xs font-bold text-slate-200 flex items-start gap-2 cursor-pointer ${isSelectedClass} ${isCorrectClass}`;
+                        optDiv.innerHTML = `<span class="bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-black shrink-0">${letters[idx]}</span> <span>${optText}</span>`;
+                        optionsContainer.appendChild(optDiv);
+                    });
+
+                    document.getElementById('answer-text').innerText = `${letters[q.correct]}) ${q.options[q.correct]}`;
+                }
+            }
+
+            // Exibição do Gabarito
+            const ansReveal = document.getElementById('answer-reveal');
+            if (isAnswerRevealed) {
+                ansReveal.classList.remove('hidden');
+            } else {
+                ansReveal.classList.add('hidden');
+            }
+
+            // Banner de Status
+            const banner = document.getElementById('status-banner');
+            const buzzerBtn = document.getElementById('btn-buzzer');
+
+            if (!activeBuzzer) {
+                banner.innerText = "🔔 VALENDO! APERTE O BOTÃO PARA BATER!";
+                banner.className = "bg-amber-500 text-slate-950 font-black text-xs md:text-sm px-4 py-1.5 rounded-full uppercase tracking-wider mb-3 animate-pulse";
+                if (buzzerBtn) buzzerBtn.disabled = false;
+            } else {
+                banner.innerText = `🚨 ${activeBuzzer.player.toUpperCase()} (${teamNames[activeBuzzer.team].toUpperCase()}) BATEU PRIMEIRO!`;
+                banner.className = "bg-green-500 text-slate-950 font-black text-xs md:text-sm px-4 py-1.5 rounded-full uppercase tracking-wider mb-3";
+                if (buzzerBtn) buzzerBtn.disabled = true;
+            }
+
+            // Ajusta botões de Passa/Repassa no painel do mestre
+            const btnPass = document.getElementById('btn-pass');
+            const btnRepass = document.getElementById('btn-repass');
+
+            if (passState === 0) {
+                btnPass.classList.remove('hidden');
+                btnRepass.classList.add('hidden');
+            } else if (passState === 1) {
+                btnPass.classList.add('hidden');
+                btnRepass.classList.remove('hidden');
+            } else {
+                btnPass.classList.add('hidden');
+                btnRepass.classList.add('hidden');
+            }
+        }
+
+        /* AÇÕES DO APRESENTADOR */
+        function toggleAnswer() {
+            isAnswerRevealed = !isAnswerRevealed;
+            broadcastState();
+        }
+
+        function handleCorrect() {
+            if (!activeBuzzer) return;
+            playSuccessSound();
+            scores[activeBuzzer.team] += 100;
+            resetRound();
+        }
+
+        function handleWrong() {
+            if (!activeBuzzer) return;
+            playSplatSound();
+            scores[activeBuzzer.team] -= 100;
+            
+            const targetTeam = activeBuzzer.team;
+            const targetPlayer = activeBuzzer.player;
+            
+            broadcastSplat(targetTeam, targetPlayer);
+            resetRound();
+        }
+
+        function handlePass() {
+            if (passState === 0 && activeBuzzer) {
+                passState = 1;
+                let nextIdx = (teamsList.indexOf(activeBuzzer.team) + 1) % teamsList.length;
+                activeBuzzer = { player: "Equipe Desafiada", team: teamsList[nextIdx] };
+                selectedOptionIdx = null; // Reseta seleção na troca
+                broadcastState();
+            }
+        }
+
+        function handleRepass() {
+            if (passState === 1 && activeBuzzer) {
+                passState = 2;
+                let prevIdx = (teamsList.indexOf(activeBuzzer.team) + teamsList.length - 1) % teamsList.length;
+                activeBuzzer = { player: "Equipe Obrigada a Responder", team: teamsList[prevIdx] };
+                selectedOptionIdx = null; // Reseta seleção na troca
+                broadcastState();
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
+            isAnswerRevealed = false;
+            resetRound();
+        }
+
+        function resetBuzzer() {
+            resetRound();
+        }
+
+        function resetRound() {
+            activeBuzzer = null;
+            passState = 0;
+            selectedOptionIdx = null;
+            if (isHost) broadcastState();
+        }
+
+        function broadcastSplat(team, player) {
+            showSplatModal(team, player);
+            connections.forEach(c => c.open && c.send({ type: 'SPLAT_ANIM', team, player }));
+        }
+
+        function showSplatModal(team, player) {
+            document.getElementById('splat-team-text').innerText = `${player || teamNames[team]} (${teamNames[team]}) tomou Torta na Cara (-100 pts)!`;
+            openModal('modal-splat');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+    </script>
+</body>
+</html>
