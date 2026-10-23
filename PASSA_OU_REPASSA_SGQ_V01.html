@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Passa ou Repassa — Torta na Cara SGQ</title>
+    <title>Passa ou Repassa — Torta na Cara SGQ (4 Equipes)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- PeerJS para Conexão em Rede P2P -->
@@ -43,10 +43,11 @@
             cursor: not-allowed;
         }
 
-        /* Cards das Equipes */
+        /* Cards das 4 Equipes */
         .team-card-blue { background: rgba(30, 58, 138, 0.6); border: 2px solid #3b82f6; }
         .team-card-red { background: rgba(153, 27, 27, 0.6); border: 2px solid #ef4444; }
         .team-card-yellow { background: rgba(161, 98, 7, 0.6); border: 2px solid #eab308; }
+        .team-card-green { background: rgba(20, 83, 45, 0.6); border: 2px solid #22c55e; }
 
         /* Estilo das Opções / Alternativas na Lateral Esquerda */
         .opt-card {
@@ -80,7 +81,7 @@
         <h1 class="text-3xl md:text-5xl font-black font-impact text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 tracking-wider uppercase drop-shadow-md">
             🥧 PASSA OU REPASSA SGQ
         </h1>
-        <p class="text-xs md:text-sm text-slate-300 font-semibold">Desafio com Alternativas Múltiplas e Conexão P2P em Tempo Real</p>
+        <p class="text-xs md:text-sm text-slate-300 font-semibold">Suporte para até 4 Equipes em Tempo Real via Rede P2P!</p>
     </header>
 
     <!-- TELA DE CONEXÃO E SELEÇÃO DE PAPEL -->
@@ -104,11 +105,12 @@
                 <input type="text" id="input-player-name" placeholder="Seu Nome / Apelido" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm font-bold text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
                 <input type="text" id="input-room-code" placeholder="Código do Token (ex: TORTA-1234)" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-center text-sm font-bold uppercase tracking-widest text-amber-400 placeholder-slate-600 focus:outline-none focus:border-amber-500">
                 
-                <p class="text-xs text-slate-400 font-semibold mb-1">Selecione sua Equipe:</p>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="joinAsPlayer('blue')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer">Equipe Azul</button>
-                    <button onclick="joinAsPlayer('red')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer">Equipe Vermelha</button>
-                    <button onclick="joinAsPlayer('yellow')" class="bg-yellow-600 hover:bg-yellow-500 text-slate-950 font-bold py-2.5 rounded-xl text-xs cursor-pointer">Equipe Amarela</button>
+                <p class="text-xs text-slate-400 font-semibold mb-1">Selecione a sua Equipe (até 4 equipes):</p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button onclick="joinAsPlayer('blue')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer">Azul</button>
+                    <button onclick="joinAsPlayer('red')" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer">Vermelha</button>
+                    <button onclick="joinAsPlayer('yellow')" class="bg-yellow-600 hover:bg-yellow-500 text-slate-950 font-bold py-2.5 rounded-xl text-xs cursor-pointer">Amarela</button>
+                    <button onclick="joinAsPlayer('green')" class="bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-xl text-xs cursor-pointer">Verde</button>
                 </div>
             </div>
         </div>
@@ -117,7 +119,7 @@
     <!-- TELA PRINCIPAL DO JOGO -->
     <div id="screen-game" class="hidden w-full max-w-6xl flex-col gap-4 my-auto">
 
-        <!-- PAINEL SUPERIOR: TOKEN DA SALA E PLACAR DAS EQUIPES -->
+        <!-- PAINEL SUPERIOR: TOKEN DA SALA E PLACAR DAS 4 EQUIPES -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-3">
                 <div class="flex items-center gap-2">
@@ -127,19 +129,23 @@
                 <div id="role-display" class="text-xs font-bold px-3 py-1 rounded-lg bg-slate-800 text-cyan-400">Apresentador</div>
             </div>
 
-            <!-- Placar das 3 Equipes -->
-            <div class="grid grid-cols-3 gap-3 text-center">
+            <!-- Placar das 4 Equipes -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
                 <div class="team-card-blue p-3 rounded-2xl">
                     <div class="text-xs font-black text-blue-400 uppercase">Equipe Azul</div>
-                    <div id="score-blue" class="text-2xl md:text-4xl font-black text-white">0</div>
+                    <div id="score-blue" class="text-2xl md:text-3xl font-black text-white">0</div>
                 </div>
                 <div class="team-card-red p-3 rounded-2xl">
                     <div class="text-xs font-black text-red-400 uppercase">Equipe Vermelha</div>
-                    <div id="score-red" class="text-2xl md:text-4xl font-black text-white">0</div>
+                    <div id="score-red" class="text-2xl md:text-3xl font-black text-white">0</div>
                 </div>
                 <div class="team-card-yellow p-3 rounded-2xl">
                     <div class="text-xs font-black text-yellow-400 uppercase">Equipe Amarela</div>
-                    <div id="score-yellow" class="text-2xl md:text-4xl font-black text-white">0</div>
+                    <div id="score-yellow" class="text-2xl md:text-3xl font-black text-white">0</div>
+                </div>
+                <div class="team-card-green p-3 rounded-2xl">
+                    <div class="text-xs font-black text-green-400 uppercase">Equipe Verde</div>
+                    <div id="score-green" class="text-2xl md:text-3xl font-black text-white">0</div>
                 </div>
             </div>
         </div>
@@ -147,7 +153,7 @@
         <!-- LAYOUT DE 2 COLUNAS: PAINEL LATERAL DE ALTERNATIVAS + PAINEL DE AÇÃO -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             
-            <!-- LATERAL ESQUERDA: ALTERNATIVAS DA PERGUNTA (4 OPÇÕES REALISTAS) -->
+            <!-- LATERAL ESQUERDA: ALTERNATIVAS DA PERGUNTA -->
             <div class="lg:col-span-1 bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col justify-between">
                 <div>
                     <h4 class="text-xs font-black text-amber-400 uppercase tracking-wider mb-3 pb-2 border-b border-slate-800 text-center">
@@ -313,7 +319,7 @@
                 correct: 2
             },
             {
-                q: "No estudo de FMEA, o RPN (Número de Prioridade de Risco) é calculado multiplicando Severidade, Ocorrência e qual outro fator?",
+                q: "No estudo de FMEA, o RPN (Número de Prioridade de Risco) é calculated multiplicando Severidade, Ocorrência e qual outro fator?",
                 options: ["Detecção", "Custo do Material", "Tempo de Peça", "Quantidade de Operadores"],
                 correct: 0
             },
@@ -337,14 +343,21 @@
         let isAnswerRevealed = false;
         
         let myPlayerName = "";
-        let myTeam = null; // 'blue', 'red', 'yellow'
+        let myTeam = null; // 'blue', 'red', 'yellow', 'green'
 
         let currentQuestionIndex = 0;
-        let scores = { blue: 0, red: 0, yellow: 0 };
+        let scores = { blue: 0, red: 0, yellow: 0, green: 0 };
         let activeBuzzer = null; // { player: 'Nome', team: 'blue' }
         let passState = 0; // 0: Normal, 1: Passou, 2: Repassou
 
-        const teamNames = { blue: "Equipe Azul", red: "Equipe Vermelha", yellow: "Equipe Amarela" };
+        const teamNames = { 
+            blue: "Equipe Azul", 
+            red: "Equipe Vermelha", 
+            yellow: "Equipe Amarela", 
+            green: "Equipe Verde" 
+        };
+
+        const teamsList = ['blue', 'red', 'yellow', 'green'];
 
         /* CRIAR SALA (APRESENTADOR) */
         function createRoom() {
@@ -445,10 +458,11 @@
         }
 
         function updateUI() {
-            // Atualiza Placar
+            // Atualiza Placar das 4 Equipes
             document.getElementById('score-blue').innerText = scores.blue;
             document.getElementById('score-red').innerText = scores.red;
             document.getElementById('score-yellow').innerText = scores.yellow;
+            document.getElementById('score-green').innerText = scores.green;
 
             // Atualiza Pergunta e Opções
             const q = questions[currentQuestionIndex];
@@ -537,9 +551,8 @@
         function handlePass() {
             if (passState === 0 && activeBuzzer) {
                 passState = 1;
-                const teams = ['blue', 'red', 'yellow'];
-                let nextIdx = (teams.indexOf(activeBuzzer.team) + 1) % 3;
-                activeBuzzer = { player: "Equipe Desafiada", team: teams[nextIdx] };
+                let nextIdx = (teamsList.indexOf(activeBuzzer.team) + 1) % teamsList.length;
+                activeBuzzer = { player: "Equipe Desafiada", team: teamsList[nextIdx] };
                 broadcastState();
             }
         }
@@ -547,9 +560,8 @@
         function handleRepass() {
             if (passState === 1 && activeBuzzer) {
                 passState = 2;
-                const teams = ['blue', 'red', 'yellow'];
-                let prevIdx = (teams.indexOf(activeBuzzer.team) + 2) % 3;
-                activeBuzzer = { player: "Equipe Obrigada a Responder", team: teams[prevIdx] };
+                let prevIdx = (teamsList.indexOf(activeBuzzer.team) + teamsList.length - 1) % teamsList.length;
+                activeBuzzer = { player: "Equipe Obrigada a Responder", team: teamsList[prevIdx] };
                 broadcastState();
             }
         }
