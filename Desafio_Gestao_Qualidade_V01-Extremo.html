@@ -120,7 +120,7 @@ button:disabled{opacity:0.5;cursor:not-allowed}
     </div>
 
     <div class="hud-panel">
-      <div class="hud-item timer">⏱️ Takt Time: <span id="taktDisplay">15s</span></div>
+      <div class="hud-item timer">⏱️ Takt Time: <span id="taktDisplay">20s</span></div>
       <div class="hud-item score">🏆 Pontos: <span id="scoreDisplay">0</span></div>
     </div>
   </div>
@@ -143,6 +143,7 @@ button:disabled{opacity:0.5;cursor:not-allowed}
 <script>
 // CONFIGURAÇÃO DO LIMITE MÁXIMO DE JOGADORES NA SALA
 const MAX_PLAYERS = 8;
+const DEFAULT_TAKT_TIME = 20; // TEMPO DE TAKT TIME AJUSTADO PARA 20s
 
 const allQuestions = [
   /* PÁGINA 1 */
@@ -174,7 +175,7 @@ let currentPage = 1;
 let placedCount = 0;
 let totalScore = 0;
 let comboStreak = 1;
-let taktTime = 15;
+let taktTime = DEFAULT_TAKT_TIME;
 let taktInterval = null;
 let filledQuestionIds = [];
 
@@ -231,7 +232,6 @@ function joinRoom() {
 
 function handleData(data, conn) {
   if (data.type === 'JOIN' && isHost) {
-    // VERIFICA SE ATINGIU O LIMITE DE 8 JOGADORES
     const totalCurrentPlayers = Object.keys(playersData).length;
     const isAlreadyInRoom = !!playersData[data.playerId];
 
@@ -310,13 +310,13 @@ function updateLeaderboard() {
 // TAKT TIME E JOGO
 function startTaktTimer() {
   clearInterval(taktInterval);
-  taktTime = 15;
+  taktTime = DEFAULT_TAKT_TIME;
   document.getElementById("taktDisplay").textContent = taktTime + "s";
   taktInterval = setInterval(() => {
     taktTime--;
     document.getElementById("taktDisplay").textContent = taktTime + "s";
     if (taktTime <= 0) {
-      taktTime = 15;
+      taktTime = DEFAULT_TAKT_TIME;
       totalScore = Math.max(0, totalScore - 30);
       comboStreak = 1;
       showFeedback("⏰ TAKT TIME ESTOURADO! -30 pts por atraso no lote.", "error");
