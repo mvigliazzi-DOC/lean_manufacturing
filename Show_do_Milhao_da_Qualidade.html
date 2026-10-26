@@ -3,19 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Show da Qualidade — Quem Quer Ser um Milionário SGQ</title>
+    <title>Show da Qualidade — Edição Personalizada SGQ</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
-
-        :root {
-            --bg-deep: #050b18;
-            --panel-blue: #0b193d;
-            --gold-main: #f59e0b;
-            --gold-bright: #fbbf24;
-            --accent-cyan: #06b6d4;
-        }
 
         body {
             font-family: 'Montserrat', sans-serif;
@@ -24,7 +18,15 @@
             min-height: 100vh;
         }
 
-        /* Botão de Alternativa Estilo Show do Milhão */
+        /* Animação de Tremor na Tela */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake-screen { animation: shake 0.4s ease-in-out; }
+
+        /* Botão de Alternativa */
         .btn-option {
             background: linear-gradient(180deg, #1e3a8a 0%, #0f172a 100%);
             border: 2px solid #3b82f6;
@@ -40,6 +42,7 @@
             background: linear-gradient(180deg, #d97706 0%, #b45309 100%) !important;
             border-color: #ffffff !important;
             color: #ffffff !important;
+            animation: pulse-orange 0.8s infinite alternate;
         }
         .btn-option.correct {
             background: linear-gradient(180deg, #15803d 0%, #166534 100%) !important;
@@ -75,17 +78,22 @@
             0% { box-shadow: 0 0 5px #4ade80; }
             100% { box-shadow: 0 0 20px #4ade80; }
         }
+        @keyframes pulse-orange {
+            0% { box-shadow: 0 0 5px #f59e0b; }
+            100% { box-shadow: 0 0 20px #f59e0b; }
+        }
 
         /* Pirâmide de Prêmios */
-        .prize-step {
-            transition: all 0.3s ease;
-        }
+        .prize-step { transition: all 0.3s ease; }
         .prize-step.active {
             background-color: #f59e0b;
             color: #0f172a;
             font-weight: 900;
             transform: scale(1.05);
             box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+        }
+        .prize-step.safe-haven {
+            border: 2px solid #22c55e;
         }
 
         /* Custom Scrollbar */
@@ -94,7 +102,7 @@
         ::-webkit-scrollbar-thumb { background: #1e3a8a; border-radius: 3px; }
     </style>
 </head>
-<body class="p-3 md:p-6 flex flex-col justify-between items-center min-h-screen">
+<body id="main-body" class="p-3 md:p-6 flex flex-col justify-between items-center min-h-screen">
 
     <!-- CABEÇALHO -->
     <header class="text-center w-full max-w-5xl mb-4">
@@ -104,22 +112,31 @@
         <h1 class="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-500 to-yellow-200 uppercase tracking-tight">
             Show da Qualidade
         </h1>
-        <p class="text-xs md:text-sm text-slate-400">Quem Quer Ser um Milionário da Engenharia e Gestão?</p>
+        <p class="text-xs md:text-sm text-slate-400">Edição com Cadastro de Participante, Auto-Recuperação e Alternativas Dinâmicas</p>
     </header>
 
-    <!-- TELA INICIAL -->
+    <!-- TELA INICIAL (CADASTRO) -->
     <div id="screen-start" class="w-full max-w-xl bg-slate-900/90 border-2 border-amber-500/60 rounded-2xl p-6 md:p-8 text-center shadow-2xl my-auto">
         <div class="text-5xl mb-4">💎</div>
         <h2 class="text-2xl font-black text-amber-400 mb-2">Rumo ao 1 Milhão!</h2>
         <p class="text-slate-300 text-sm mb-6 leading-relaxed">
-            Responda corretamente às 15 perguntas sobre <strong>Gestão da Qualidade, Lean, CEP, ISO 9001 e Six Sigma</strong>. Utilize suas ajudas com sabedoria e conquiste o prêmio máximo!
+            Responda corretamente às 15 perguntas sobre <strong>Qualidade, Lean, CEP, ISO 9001 e Six Sigma</strong>. Insira seu nome para iniciar o desafio sob pressão de tempo e com alternativas embaralhadas!
         </p>
 
+        <!-- Campo de Nome do Participante -->
+        <div class="mb-6 text-left">
+            <label for="input-player-name" class="block text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">
+                👤 Nome do Participante:
+            </label>
+            <input type="text" id="input-player-name" placeholder="Digite seu nome completo ou apelido..." class="w-full bg-slate-950 border border-amber-500/50 rounded-xl p-3.5 text-slate-100 text-sm font-bold placeholder-slate-600 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20">
+        </div>
+
         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-left text-xs text-slate-300 space-y-2 mb-6">
-            <div class="font-bold text-amber-400 border-b border-slate-800 pb-1">💡 Suas Ajudas Disponíveis:</div>
-            <div>⏩ <strong>Pular:</strong> Troca a pergunta atual por outra do mesmo nível (1x).</div>
-            <div>🎓 <strong>Universitários:</strong> Mostra a porcentagem de votos dos alunos de engenharia (1x).</div>
-            <div>✂️ <strong>Eliminar Duas (50:50):</strong> Remove duas alternativas incorretas (1x).</div>
+            <div class="font-bold text-amber-400 border-b border-slate-800 pb-1">💡 Regras & Recursos do Jogo:</div>
+            <div>⏱️ <strong>Takt Time:</strong> 30 segundos por pergunta!</div>
+            <div>🛡️ <strong>Marcos de Segurança:</strong> Perguntas 5 (R$ 10 mil) e 10 (R$ 100 mil) garantem prêmio mínimo!</div>
+            <div>🔀 <strong>Alternativas Dinâmicas:</strong> As opções de resposta mudam de posição a cada tentativa.</div>
+            <div>🔄 <strong>Proteção contra Quedas:</strong> Se fechar ou recarregar, você retorna ao ponto exato onde parou!</div>
         </div>
 
         <button onclick="startGame()" class="w-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black py-4 rounded-xl text-lg uppercase tracking-wider transition-all transform hover:scale-105 shadow-xl cursor-pointer">
@@ -133,11 +150,18 @@
         <!-- PAINEL PRINCIPAL (PERGUNTA + OPÇÕES) -->
         <div class="lg:col-span-3 flex flex-col justify-between gap-4">
             
-            <!-- Painel Superior de Status e Painel de Ajudas -->
+            <!-- Painel Superior de Status, Nome, Cronômetro e Ajudas -->
             <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
-                <div>
-                    <span id="badge-level" class="bg-amber-500 text-slate-950 font-black text-xs px-3 py-1 rounded-md uppercase">Nível Básico</span>
-                    <span id="label-q-num" class="text-xs text-slate-400 font-bold ml-2">Pergunta 1 de 15</span>
+                <div class="flex items-center gap-3">
+                    <span id="player-name-display" class="bg-indigo-950 border border-indigo-500/40 text-indigo-300 font-black text-xs px-3 py-1 rounded-md">👤 Participante</span>
+                    <span id="badge-level" class="bg-amber-500 text-slate-950 font-black text-xs px-3 py-1 rounded-md uppercase">Fácil</span>
+                    <span id="label-q-num" class="text-xs text-slate-400 font-bold">Pergunta 1 de 15</span>
+                </div>
+
+                <!-- Cronômetro Visual -->
+                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-4 py-1.5 rounded-full">
+                    <span class="text-xs text-slate-400 font-bold">⏱️ Tempo:</span>
+                    <span id="timer-display" class="font-black text-lg text-amber-400 font-mono">30s</span>
                 </div>
 
                 <!-- Botões de Ajuda -->
@@ -161,9 +185,22 @@
                 </h3>
             </div>
 
-            <!-- Grade de Opções (A, B, C, D) -->
+            <!-- Grade de Opções (A, B, C, D com Alternativas Embaralhadas) -->
             <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <!-- Opções serão injetadas via JS -->
+            </div>
+
+            <!-- PAINEL DE CONFIRMAÇÃO DE RESPOSTA (SUSPENSE) -->
+            <div id="confirm-panel" class="hidden bg-amber-500/10 border-2 border-amber-500 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 animate-pulse">
+                <span class="text-xs md:text-sm font-bold text-amber-400">🤔 Tem certeza absoluta da sua resposta?</span>
+                <div class="flex gap-2">
+                    <button onclick="cancelSelection()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2 rounded-lg text-xs cursor-pointer">
+                        Mudar de Ideia
+                    </button>
+                    <button onclick="confirmAnswer()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-2 rounded-lg text-xs uppercase tracking-wider cursor-pointer shadow-lg">
+                        Resposta Definitiva!
+                    </button>
+                </div>
             </div>
 
             <!-- Painel do Rodapé: Botão Parar & Valores de Risco -->
@@ -209,11 +246,12 @@
         </div>
     </div>
 
-    <!-- MODAL DE FIM DE JOGO (VITÓRIA / PAROU / ERROU) -->
+    <!-- MODAL DE FIM DE JOGO -->
     <div id="modal-end" class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border-2 border-amber-500 rounded-2xl p-6 md:p-8 max-w-lg w-full text-center shadow-2xl">
             <div id="end-icon" class="text-6xl mb-3">🏆</div>
             <h2 id="end-title" class="text-2xl font-black text-amber-400 mb-2">Parabéns!</h2>
+            <p id="end-player" class="text-xs font-bold text-amber-300 uppercase tracking-widest mb-1"></p>
             <p id="end-desc" class="text-sm text-slate-300 mb-6 leading-relaxed"></p>
 
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6">
@@ -231,10 +269,9 @@
         /* SINTETIZADOR DE ÁUDIO WEB AUDIO API */
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx = null;
+        let heartbeatInterval = null;
 
-        function initAudio() {
-            if (!audioCtx) audioCtx = new AudioContext();
-        }
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
 
         function playSound(freq, type, duration) {
             try {
@@ -249,7 +286,21 @@
                 gain.connect(audioCtx.destination);
                 osc.start();
                 osc.stop(audioCtx.currentTime + duration);
-            } catch (e) { console.log(e); }
+            } catch (e) {}
+        }
+
+        function playHeartbeat() {
+            playSound(70, 'sine', 0.15);
+            setTimeout(() => playSound(60, 'sine', 0.15), 150);
+        }
+
+        function startHeartbeatSound(speedMs = 1000) {
+            stopHeartbeatSound();
+            heartbeatInterval = setInterval(playHeartbeat, speedMs);
+        }
+
+        function stopHeartbeatSound() {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
         }
 
         function playCorrectSound() {
@@ -263,155 +314,156 @@
             setTimeout(() => playSound(180, 'sawtooth', 0.4), 180);
         }
 
-        function playClickSound() {
-            playSound(400, 'sine', 0.08);
-        }
+        function playClickSound() { playSound(400, 'sine', 0.08); }
 
-        /* TABELA DE PRÊMIOS */
+        /* TABELA DE PRÊMIOS COM MARCOS DE SEGURANÇA */
         const prizes = [
-            { level: 1, val: "R$ 1.000", stop: "R$ 0", err: "R$ 0", name: "Básico" },
-            { level: 2, val: "R$ 2.000", stop: "R$ 1.000", err: "R$ 500", name: "Básico" },
-            { level: 3, val: "R$ 3.000", stop: "R$ 2.000", err: "R$ 1.000", name: "Básico" },
-            { level: 4, val: "R$ 5.000", stop: "R$ 3.000", err: "R$ 1.500", name: "Básico" },
-            { level: 5, val: "R$ 10.000", stop: "R$ 5.000", err: "R$ 2.500", name: "Básico" },
-            { level: 6, val: "R$ 20.000", stop: "R$ 10.000", err: "R$ 5.000", name: "Intermediário" },
+            { level: 1, val: "R$ 1.000", stop: "R$ 0", err: "R$ 0", name: "Fácil" },
+            { level: 2, val: "R$ 2.000", stop: "R$ 1.000", err: "R$ 500", name: "Fácil" },
+            { level: 3, val: "R$ 3.000", stop: "R$ 2.000", err: "R$ 1.000", name: "Fácil" },
+            { level: 4, val: "R$ 5.000", stop: "R$ 3.000", err: "R$ 1.500", name: "Fácil" },
+            { level: 5, val: "R$ 10.000", stop: "R$ 5.000", err: "R$ 10.000", name: "MARCO DE SEGURANÇA 🛡️", isSafe: true },
+            { level: 6, val: "R$ 20.000", stop: "R$ 10.000", err: "R$ 10.000", name: "Intermediário" },
             { level: 7, val: "R$ 30.000", stop: "R$ 20.000", err: "R$ 10.000", name: "Intermediário" },
-            { level: 8, val: "R$ 40.000", stop: "R$ 30.000", err: "R$ 15.000", name: "Intermediário" },
-            { level: 9, val: "R$ 50.000", stop: "R$ 40.000", err: "R$ 20.000", name: "Intermediário" },
-            { level: 10, val: "R$ 100.000", stop: "R$ 50.000", err: "R$ 25.000", name: "Avançado" },
-            { level: 11, val: "R$ 200.000", stop: "R$ 100.000", err: "R$ 50.000", name: "Avançado" },
-            { level: 12, val: "R$ 300.000", stop: "R$ 200.000", err: "R$ 100.000", name: "Avançado" },
-            { level: 13, val: "R$ 400.000", stop: "R$ 300.000", err: "R$ 150.000", name: "Avançado" },
-            { level: 14, val: "R$ 500.000", stop: "R$ 400.000", err: "R$ 200.000", name: "Expert" },
-            { level: 15, val: "R$ 1 MILHÃO", stop: "R$ 500.000", err: "R$ 0", name: "SUPER EXPERT" }
+            { level: 8, val: "R$ 40.000", stop: "R$ 30.000", err: "R$ 10.000", name: "Intermediário" },
+            { level: 9, val: "R$ 50.000", stop: "R$ 40.000", err: "R$ 10.000", name: "Intermediário" },
+            { level: 10, val: "R$ 100.000", stop: "R$ 50.000", err: "R$ 100.000", name: "MARCO DE SEGURANÇA 🛡️", isSafe: true },
+            { level: 11, val: "R$ 200.000", stop: "R$ 100.000", err: "R$ 100.000", name: "Difícil" },
+            { level: 12, val: "R$ 300.000", stop: "R$ 200.000", err: "R$ 100.000", name: "Difícil" },
+            { level: 13, val: "R$ 400.000", stop: "R$ 300.000", err: "R$ 100.000", name: "Difícil" },
+            { level: 14, val: "R$ 500.000", stop: "R$ 400.000", err: "R$ 100.000", name: "Difícil" },
+            { level: 15, val: "R$ 1 MILHÃO", stop: "R$ 500.000", err: "R$ 100.000", name: "SUPER EXPERT" }
         ];
 
-        /* BANCO DE QUESTÕES DIVIDIDO POR DIFICULDADE */
-        const questionBank = {
-            basic: [
-                {
-                    q: "Qual ferramenta visual criada por Kaoru Ishikawa é utilizada para categorizar causas raízes em 6M?",
-                    options: ["Diagrama de Pareto", "Diagrama de Causa e Efeito", "Matriz GUT", "Gráfico de Gantt"],
-                    correct: 1
-                },
-                {
-                    q: "O que significa a sigla PDCA na melhoria contínua de processos?",
-                    options: ["Plan, Do, Check, Act", "Produce, Direct, Control, Analyze", "Process, Data, Quality, Action", "Prevent, Detect, Correct, Adjust"],
-                    correct: 0
-                },
-                {
-                    q: "Segundo o Princípio de Pareto (Regra 80/20) aplicado à qualidade:",
-                    options: ["80% do tempo gera 20% do trabalho", "80% das falhas vêm de 20% das causas vitais", "80% dos custos são fixos", "20% dos produtos dão 80% de prejuízo"],
-                    correct: 1
-                },
-                {
-                    q: "Qual dos 5S do programa de organização do ambiente de trabalho refere-se ao Senso de Limpeza?",
-                    options: ["Seiri", "Seiton", "Seiso", "Shitsuke"],
-                    correct: 2
-                },
-                {
-                    q: "O que representa o 'W' de 'Why' na ferramenta de plano de ação 5W2H?",
-                    options: ["Quem executará", "Onde será feito", "Por que será feito", "Quando começará"],
-                    correct: 2
-                }
+        /* BANCO DE QUESTÕES CATEGORIZADO (FÁCIL, INTERMEDIÁRIO, DIFÍCIL) */
+        const rawQuestionBank = {
+            facil: [
+                { q: "Qual ferramenta visual criada por Kaoru Ishikawa é utilizada para categorizar causas raízes em 6M?", correctText: "Diagrama de Causa e Efeito", wrongTexts: ["Diagrama de Pareto", "Matriz GUT", "Gráfico de Gantt"] },
+                { q: "O que significa a sigla PDCA na melhoria contínua de processos?", correctText: "Plan, Do, Check, Act", wrongTexts: ["Produce, Direct, Control, Analyze", "Process, Data, Quality, Action", "Prevent, Detect, Correct, Adjust"] },
+                { q: "Segundo o Princípio de Pareto (Regra 80/20) aplicado à qualidade:", correctText: "80% das falhas vêm de 20% das causas vitais", wrongTexts: ["80% do tempo gera 20% do trabalho", "80% dos custos são fixos", "20% dos produtos dão 80% de prejuízo"] },
+                { q: "Qual dos 5S do programa de organização do ambiente de trabalho refere-se ao Senso de Limpeza?", correctText: "Seiso", wrongTexts: ["Seiri", "Seiton", "Shitsuke"] },
+                { q: "O que representa o 'W' de 'Why' na ferramenta de plano de ação 5W2H?", correctText: "Por que será feito", wrongTexts: ["Quem executará", "Onde será feito", "Quando começará"] }
             ],
-            intermediate: [
-                {
-                    q: "Em um Histograma, o aparecimento de dois picos distintos (distribuição bimodal) geralmente indica:",
-                    options: ["Processo perfeitamente centrado", "Mistura de dados de duas fontes ou condições diferentes", "Instrumento de medição descalibrado", "Alta variabilidade aleatória Gaussiana"],
-                    correct: 1
-                },
-                {
-                    q: "No FMEA de Processo, o RPN (Número de Prioridade de Risco) é calculado através de:",
-                    options: ["Severidade + Ocorrência + Detecção", "Severidade x Ocorrência x Detecção", "(Severidade x Ocorrência) / Detecção", "Severidade x (Ocorrência + Detecção)"],
-                    correct: 1
-                },
-                {
-                    q: "O dispositivo 'Poka-Yoke' tem como principal objetivo pedagógico e operacional:",
-                    options: ["Reduzir o tempo de setup", "Aumentar a velocidade da máquina", "Prevenir a ocorrência ou passagem de erros humanos", "Treinar operadores novos"],
-                    correct: 2
-                },
-                {
-                    q: "Qual a função primária do cartão Kanban em um sistema de produção Lean?",
-                    options: ["Avisar o RH sobre horas extras", "Autorizar a produção/movimentação no sistema puxado", "Medir a temperatura da máquina", "Calcular a depreciação do ativo"],
-                    correct: 1
-                },
-                {
-                    q: "No estudo das causas de variabilidade, a variação por Causa Especial é aquela que:",
-                    options: ["É inerente ao próprio processo estável", "Ocorre de forma imprevisível por fatores externos/anormais", "Segue sempre a curva normal perfeita", "Não pode ser corrigida pela engenharia"],
-                    correct: 1
-                }
+            intermediario: [
+                { q: "Em um Histograma, o aparecimento de dois picos distintos (distribuição bimodal) geralmente indica:", correctText: "Mistura de dados de duas fontes ou condições diferentes", wrongTexts: ["Processo perfeitamente centrado", "Instrumento de medição descalibrado", "Alta variabilidade aleatória Gaussiana"] },
+                { q: "No FMEA de Processo, o RPN (Número de Prioridade de Risco) é calculado através de:", correctText: "Severidade x Ocorrência x Detecção", wrongTexts: ["Severidade + Ocorrência + Detecção", "(Severidade x Ocorrência) / Detecção", "Severidade x (Ocorrência + Detecção)"] },
+                { q: "O dispositivo 'Poka-Yoke' tem como principal objetivo pedagógico e operacional:", correctText: "Prevenir a ocorrência ou passagem de erros humanos", wrongTexts: ["Reduzir o tempo de setup", "Aumentar a velocidade da máquina", "Treinar operadores novos"] },
+                { q: "Qual a função primária do cartão Kanban em um sistema de produção Lean?", correctText: "Autorizar a produção/movimentação no sistema puxado", wrongTexts: ["Avisar o RH sobre horas extras", "Medir a temperatura da máquina", "Calcular a depreciação do ativo"] },
+                { q: "No estudo das causas de variabilidade, a variação por Causa Especial é aquela que:", correctText: "Ocorre de forma imprevisível por fatores externos/anormais", wrongTexts: ["É inerente ao próprio processo estável", "Segue sempre a curva normal perfeita", "Não pode ser corrigida pela engenharia"] }
             ],
-            advanced: [
-                {
-                    q: "Segundo as regras de Western Electric para Cartas de Controle (CEP), uma sequência de 8 pontos consecutivos do mesmo lado da linha média indica:",
-                    options: ["Processo sob controle ideal", "Instabilidade devido a uma causa especial de variação", "Necessidade de trocar a matéria-prima", "Erro de digitação no software"],
-                    correct: 1
-                },
-                {
-                    q: "Um processo que opera no nível de qualidade 6 Sigma gera estatisticamente no máximo:",
-                    options: ["3,4 Defeitos Por Milhão de Oportunidades (DPMO)", "66.807 DPMO", "340 Defeitos Por Milhão", "Zero defeitos absolutos"],
-                    correct: 0
-                },
-                {
-                    q: "Na metodologia DMAIC do Six Sigma, em qual fase são validadas e comprovadas estatisticamente as causas raiz?",
-                    options: ["Define", "Measure", "Analyze", "Improve"],
-                    correct: 2
-                },
-                {
-                    q: "O indicador OEE (Overall Equipment Effectiveness) é composto pela multiplicação de quais 3 fatores?",
-                    options: ["Disponibilidade, Desempenho e Qualidade", "Tempo, Custo e Volume", "Preço, Margem e Giro", "Eficiência, Eficácia e Produtividade"],
-                    correct: 0
-                },
-                {
-                    q: "O termo Lean 'SMED' (Single-Minute Exchange of Die) refere-se a técnicas para:",
-                    options: ["Troca rápida de ferramentas em menos de 10 minutos", "Manutenção preventiva quinzenal", "Redução de custos com transporte", "Inspeção final de qualidade"],
-                    correct: 0
-                }
-            ],
-            expert: [
-                {
-                    q: "Em uma Análise de Variância (ANOVA), quando o p-valor calculado é menor que o nível de significância alpha (ex: p < 0,05):",
-                    options: ["Rejeita-se H0: Há diferença estatisticamente significativa entre as médias", "Aceita-se H0: As médias são rigorosamente idênticas", "O teste é considerado inválido", "A variância é zero"],
-                    correct: 0
-                },
-                {
-                    q: "Segundo o AIAG, um estudo de medição Gage R&R é considerado marginalmente aceitável quando o %R&R está entre:",
-                    options: ["Abaixo de 1%", "Entre 10% e 30%", "Acima de 50%", "Entre 70% e 90%"],
-                    correct: 1
-                },
-                {
-                    q: "Qual a vantagem central de um Planejamento Fatorial Completo (Full DOE) em comparação ao teste 'Um Fator por Vez' (OFAT)?",
-                    options: ["Avaliar os efeitos de interação entre múltiplos fatores", "Eliminar a necessidade de réplicas", "Reduzir o tempo de medição a zero", "Dispensar software de análise"],
-                    correct: 0
-                },
-                {
-                    q: "No método Hoshin Kanri de desdobramento da estratégia, o conceito de 'Catchball' representa:",
-                    options: ["Negociação bidirecional de metas e meios entre níveis hierárquicos", "Um jogo motivacional de equipe", "A demissão de gerentes com baixo desempenho", "O envio de ordens unilaterais da diretoria"],
-                    correct: 0
-                },
-                {
-                    q: "Na matriz QFD (Casa da Qualidade), a estrutura do 'Telhado' é utilizada para mapear:",
-                    options: ["Conflitos e correlações técnicas entre os requisitos de engenharia", "A comparação com os preços da concorrência", "A lista de matérias-primas", "O cronograma de entregas"],
-                    correct: 0
-                }
+            dificil: [
+                { q: "Segundo as regras de Western Electric para Cartas de Controle (CEP), uma sequência de 8 pontos consecutivos do mesmo lado da linha média indica:", correctText: "Instabilidade devido a uma causa especial de variação", wrongTexts: ["Processo sob controle ideal", "Necessidade de trocar a matéria-prima", "Erro de digitação no software"] },
+                { q: "Um processo que opera no nível de qualidade 6 Sigma gera estatisticamente no máximo:", correctText: "3,4 Defeitos Por Milhão de Oportunidades (DPMO)", wrongTexts: ["66.807 DPMO", "340 Defeitos Por Milhão", "Zero defeitos absolutos"] },
+                { q: "Na metodologia DMAIC do Six Sigma, em qual fase são validadas e comprovadas estatisticamente as causas raiz?", correctText: "Analyze", wrongTexts: ["Define", "Measure", "Improve"] },
+                { q: "O indicador OEE (Overall Equipment Effectiveness) é composto pela multiplicação de quais 3 fatores?", correctText: "Disponibilidade, Desempenho e Qualidade", wrongTexts: ["Tempo, Custo e Volume", "Preço, Margem e Giro", "Eficiência, Eficácia e Produtividade"] },
+                { q: "O termo Lean 'SMED' (Single-Minute Exchange of Die) refere-se a técnicas para:", correctText: "Troca rápida de ferramentas em menos de 10 minutos", wrongTexts: ["Manutenção preventiva quinzenal", "Redução de custos com transporte", "Inspeção final de qualidade"] }
             ]
         };
 
         /* ESTADO DO JOGO */
-        let currentStep = 0; // 0 a 14
-        let currentQuestion = null;
+        let playerName = "";
+        let currentStep = 0;
         let helps = { skip: true, students: true, '5050': true };
-        let currentPool = [];
+        
+        let poolFacil = [];
+        let poolIntermediario = [];
+        let poolDificil = [];
+
+        let currentQuestionObj = null; // { q: "...", options: [...], correct: idx }
+        let selectedIdxPending = null;
+
+        let timerSeconds = 30;
+        let timerInterval = null;
+
+        /* ALGORITMO FISHER-YATES PARA EMBARALHAMENTO */
+        function shuffleArray(arr) {
+            let shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        /* MONTA A QUESTÃO E EMBARALHA AS ALTERNATIVAS */
+        function buildShuffledQuestion(rawQ) {
+            const allTexts = [rawQ.correctText, ...rawQ.wrongTexts];
+            const shuffledTexts = shuffleArray(allTexts);
+            const correctIndex = shuffledTexts.indexOf(rawQ.correctText);
+
+            return {
+                q: rawQ.q,
+                options: shuffledTexts,
+                correct: correctIndex
+            };
+        }
+
+        /* MECANISMO DE PERSISTÊNCIA / AUTOCONEXÃO */
+        function saveSessionState() {
+            const state = {
+                playerName,
+                currentStep,
+                helps,
+                poolFacil,
+                poolIntermediario,
+                poolDificil,
+                currentQuestionObj,
+                timerSeconds
+            };
+            sessionStorage.setItem('sgq_milhao_session', JSON.stringify(state));
+        }
+
+        window.addEventListener('load', () => {
+            const saved = sessionStorage.getItem('sgq_milhao_session');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    if (state.playerName && state.currentQuestionObj) {
+                        playerName = state.playerName;
+                        currentStep = state.currentStep;
+                        helps = state.helps;
+                        poolFacil = state.poolFacil;
+                        poolIntermediario = state.poolIntermediario;
+                        poolDificil = state.poolDificil;
+                        currentQuestionObj = state.currentQuestionObj;
+                        timerSeconds = state.timerSeconds || 30;
+
+                        document.getElementById('screen-start').classList.add('hidden');
+                        document.getElementById('screen-game').classList.remove('hidden');
+                        document.getElementById('player-name-display').innerText = `👤 ${playerName}`;
+
+                        updateHelpsUI();
+                        renderPrizeLadder();
+                        renderCurrentQuestionUI();
+                        startTimer(timerSeconds);
+                    }
+                } catch(e) { sessionStorage.removeItem('sgq_milhao_session'); }
+            }
+        });
 
         function startGame() {
+            const inputName = document.getElementById('input-player-name').value.trim();
+            if (!inputName) {
+                alert("Por favor, digite seu nome para iniciar o jogo!");
+                return;
+            }
+
+            playerName = inputName;
             initAudio();
             playClickSound();
+
             document.getElementById('screen-start').classList.add('hidden');
             document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('player-name-display').innerText = `👤 ${playerName}`;
 
             currentStep = 0;
             helps = { skip: true, students: true, '5050': true };
+
+            // Inicializa baralhos embaralhados por categoria
+            poolFacil = shuffleArray(rawQuestionBank.facil);
+            poolIntermediario = shuffleArray(rawQuestionBank.intermediario);
+            poolDificil = shuffleArray(rawQuestionBank.dificil);
+
             updateHelpsUI();
             renderPrizeLadder();
             loadQuestion();
@@ -423,7 +475,8 @@
             prizes.forEach((p, idx) => {
                 const stepDiv = document.createElement('div');
                 stepDiv.id = `prize-step-${idx}`;
-                stepDiv.className = `prize-step flex justify-between items-center p-2 rounded-lg border border-slate-800 ${idx === currentStep ? 'active' : 'bg-slate-950 text-slate-400'}`;
+                const safeClass = p.isSafe ? 'safe-haven' : '';
+                stepDiv.className = `prize-step flex justify-between items-center p-2 rounded-lg border border-slate-800 ${safeClass} ${idx === currentStep ? 'active' : 'bg-slate-950 text-slate-400'}`;
                 stepDiv.innerHTML = `
                     <span>${p.level}. ${p.val}</span>
                     <span class="text-[10px] opacity-75">${p.name}</span>
@@ -433,32 +486,46 @@
         }
 
         function loadQuestion() {
-            // Seleciona o banco correto baseado na fase
-            if (currentStep < 5) currentPool = questionBank.basic;
-            else if (currentStep < 9) currentPool = questionBank.intermediate;
-            else if (currentStep < 13) currentPool = questionBank.advanced;
-            else currentPool = questionBank.expert;
+            document.getElementById('confirm-panel').classList.add('hidden');
+            selectedIdxPending = null;
 
-            // Sorteia uma pergunta
-            const randomIndex = Math.floor(Math.random() * currentPool.length);
-            currentQuestion = currentPool[randomIndex];
+            let rawQ = null;
 
-            // Atualiza Interface
+            // Seleciona questão sem repetição pela categoria
+            if (currentStep < 5) {
+                if (poolFacil.length === 0) poolFacil = shuffleArray(rawQuestionBank.facil);
+                rawQ = poolFacil.pop();
+            } else if (currentStep < 10) {
+                if (poolIntermediario.length === 0) poolIntermediario = shuffleArray(rawQuestionBank.intermediario);
+                rawQ = poolIntermediario.pop();
+            } else {
+                if (poolDificil.length === 0) poolDificil = shuffleArray(rawQuestionBank.dificil);
+                rawQ = poolDificil.pop();
+            }
+
+            // Embaralha as alternativas para a nova pergunta
+            currentQuestionObj = buildShuffledQuestion(rawQ);
+
+            renderCurrentQuestionUI();
+            startTimer(30);
+            saveSessionState();
+        }
+
+        function renderCurrentQuestionUI() {
             const pData = prizes[currentStep];
             document.getElementById('badge-level').innerText = `Nível: ${pData.name}`;
             document.getElementById('label-q-num').innerText = `Pergunta ${currentStep + 1} de 15`;
-            document.getElementById('question-text').innerText = currentQuestion.q;
+            document.getElementById('question-text').innerText = currentQuestionObj.q;
 
             document.getElementById('val-errar').innerText = pData.err;
             document.getElementById('val-parar').innerText = pData.stop;
             document.getElementById('val-acertar').innerText = pData.val;
 
-            // Renderiza Opções
             const grid = document.getElementById('options-grid');
             grid.innerHTML = '';
 
             const letters = ['A', 'B', 'C', 'D'];
-            currentQuestion.options.forEach((optText, idx) => {
+            currentQuestionObj.options.forEach((optText, idx) => {
                 const btn = document.createElement('button');
                 btn.id = `opt-btn-${idx}`;
                 btn.onclick = () => selectOption(idx);
@@ -467,27 +534,89 @@
                 grid.appendChild(btn);
             });
 
-            // Atualiza Destaque da Escala
-            prizes.forEach((_, idx) => {
+            prizes.forEach((p, idx) => {
                 const el = document.getElementById(`prize-step-${idx}`);
-                if (el) el.className = `prize-step flex justify-between items-center p-2 rounded-lg border border-slate-800 ${idx === currentStep ? 'active' : 'bg-slate-950 text-slate-400'}`;
+                const safeClass = p.isSafe ? 'safe-haven' : '';
+                if (el) el.className = `prize-step flex justify-between items-center p-2 rounded-lg border border-slate-800 ${safeClass} ${idx === currentStep ? 'active' : 'bg-slate-950 text-slate-400'}`;
             });
+        }
+
+        function startTimer(initialSeconds = 30) {
+            stopTimer();
+            timerSeconds = initialSeconds;
+            document.getElementById('timer-display').innerText = `${timerSeconds}s`;
+            document.getElementById('timer-display').className = "font-black text-lg text-amber-400 font-mono";
+
+            startHeartbeatSound(1000);
+
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                saveSessionState();
+                document.getElementById('timer-display').innerText = `${timerSeconds}s`;
+
+                if (timerSeconds <= 10) {
+                    document.getElementById('timer-display').className = "font-black text-lg text-red-500 font-mono animate-ping";
+                    startHeartbeatSound(400);
+                }
+
+                if (timerSeconds <= 0) {
+                    stopTimer();
+                    triggerTimeOut();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            stopHeartbeatSound();
+        }
+
+        function triggerTimeOut() {
+            playWrongSound();
+            document.getElementById('main-body').classList.add('shake-screen');
+            setTimeout(() => document.getElementById('main-body').classList.remove('shake-screen'), 500);
+            endGame('timeout');
         }
 
         function selectOption(selectedIdx) {
             playClickSound();
-            // Desabilita botões para evitar múltiplos cliques
+            selectedIdxPending = selectedIdx;
+
             const buttons = document.querySelectorAll('.btn-option');
-            buttons.forEach(b => b.disabled = true);
+            buttons.forEach(b => b.classList.remove('selected'));
 
             const selectedBtn = document.getElementById(`opt-btn-${selectedIdx}`);
             selectedBtn.classList.add('selected');
 
+            document.getElementById('confirm-panel').classList.remove('hidden');
+        }
+
+        function cancelSelection() {
+            playClickSound();
+            selectedIdxPending = null;
+            const buttons = document.querySelectorAll('.btn-option');
+            buttons.forEach(b => b.classList.remove('selected'));
+            document.getElementById('confirm-panel').classList.add('hidden');
+        }
+
+        function confirmAnswer() {
+            stopTimer();
+            document.getElementById('confirm-panel').classList.add('hidden');
+
+            const buttons = document.querySelectorAll('.btn-option');
+            buttons.forEach(b => b.disabled = true);
+
+            const selectedBtn = document.getElementById(`opt-btn-${selectedIdxPending}`);
+
             setTimeout(() => {
-                if (selectedIdx === currentQuestion.correct) {
+                if (selectedIdxPending === currentQuestionObj.correct) {
                     playCorrectSound();
                     selectedBtn.classList.remove('selected');
                     selectedBtn.classList.add('correct');
+
+                    if (prizes[currentStep].isSafe) {
+                        confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+                    }
 
                     setTimeout(() => {
                         if (currentStep === 14) {
@@ -499,17 +628,20 @@
                     }, 1500);
                 } else {
                     playWrongSound();
+                    document.getElementById('main-body').classList.add('shake-screen');
+                    setTimeout(() => document.getElementById('main-body').classList.remove('shake-screen'), 500);
+
                     selectedBtn.classList.remove('selected');
                     selectedBtn.classList.add('wrong');
 
-                    const correctBtn = document.getElementById(`opt-btn-${currentQuestion.correct}`);
-                    correctBtn.classList.add('correct');
+                    const correctBtn = document.getElementById(`opt-btn-${currentQuestionObj.correct}`);
+                    if (correctBtn) correctBtn.classList.add('correct');
 
                     setTimeout(() => {
                         endGame('wrong');
                     }, 2000);
                 }
-            }, 1200);
+            }, 1000);
         }
 
         /* SISTEMA DE AJUDAS */
@@ -519,12 +651,40 @@
             document.getElementById('btn-help-5050').disabled = !helps['5050'];
         }
 
+        /* CORREÇÃO APLICADA: PULAR SUBTITUI A PERGUNTA ATUAL SEM ENTRAR EM LOOP */
         function useHelpSkip() {
             if (!helps.skip) return;
             playClickSound();
+            
+            // Consome a ajuda de Pular
             helps.skip = false;
             updateHelpsUI();
-            loadQuestion();
+
+            // Extrai uma nova questão da categoria ativa do baralho
+            let rawQ = null;
+
+            if (currentStep < 5) {
+                if (poolFacil.length === 0) poolFacil = shuffleArray(rawQuestionBank.facil);
+                rawQ = poolFacil.pop();
+            } else if (currentStep < 10) {
+                if (poolIntermediario.length === 0) poolIntermediario = shuffleArray(rawQuestionBank.intermediario);
+                rawQ = poolIntermediario.pop();
+            } else {
+                if (poolDificil.length === 0) poolDificil = shuffleArray(rawQuestionBank.dificil);
+                rawQ = poolDificil.pop();
+            }
+
+            // Oculta painel de confirmação se estivesse aberto
+            document.getElementById('confirm-panel').classList.add('hidden');
+            selectedIdxPending = null;
+
+            // Cria novo objeto de questão com opções embaralhadas
+            currentQuestionObj = buildShuffledQuestion(rawQ);
+
+            // Atualiza a interface, reseta temporizador e salva estado
+            renderCurrentQuestionUI();
+            startTimer(30);
+            saveSessionState();
         }
 
         function useHelp5050() {
@@ -533,15 +693,15 @@
             helps['5050'] = false;
             updateHelpsUI();
 
-            const correct = currentQuestion.correct;
+            const correct = currentQuestionObj.correct;
             let indices = [0, 1, 2, 3].filter(i => i !== correct);
             indices.sort(() => Math.random() - 0.5);
 
-            // Esconde 2 incorretas
             indices.slice(0, 2).forEach(idx => {
                 const btn = document.getElementById(`opt-btn-${idx}`);
                 if (btn) btn.style.visibility = 'hidden';
             });
+            saveSessionState();
         }
 
         function useHelpStudents() {
@@ -550,11 +710,10 @@
             helps.students = false;
             updateHelpsUI();
 
-            const correct = currentQuestion.correct;
+            const correct = currentQuestionObj.correct;
             let percentages = [0, 0, 0, 0];
 
-            // Garante alta porcentagem para a correta
-            percentages[correct] = Math.floor(Math.random() * 25) + 55; // 55% a 80%
+            percentages[correct] = Math.floor(Math.random() * 25) + 55;
             let remaining = 100 - percentages[correct];
 
             let incorrects = [0, 1, 2, 3].filter(i => i !== correct);
@@ -585,39 +744,57 @@
             });
 
             openModal('modal-students');
+            saveSessionState();
         }
 
         function stopGame() {
+            stopTimer();
             playClickSound();
             endGame('stopped');
         }
 
         function winGame() {
+            stopTimer();
             playCorrectSound();
+            confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+
+            sessionStorage.removeItem('sgq_milhao_session');
             document.getElementById('end-icon').innerText = '👑';
             document.getElementById('end-title').innerText = 'VOCÊ É UM MILIONÁRIO DA QUALIDADE!';
-            document.getElementById('end-desc').innerText = 'Você demonstrou domínio absoluto sobre todos os conceitos estratégicos e operacionais do SGQ!';
+            document.getElementById('end-player').innerText = `PARABÉNS, ${playerName.toUpperCase()}!`;
+            document.getElementById('end-desc').innerText = 'Você demonstrou domínio absoluto sobre todos os conceitos estratégicos e operacionais do SGQ sob máxima pressão!';
             document.getElementById('end-prize').innerText = 'R$ 1 MILHÃO';
             openModal('modal-end');
         }
 
         function endGame(reason) {
+            stopTimer();
+            sessionStorage.removeItem('sgq_milhao_session');
             const pData = prizes[currentStep];
+
+            document.getElementById('end-player').innerText = `JOGADOR: ${playerName.toUpperCase()}`;
+
             if (reason === 'stopped') {
                 document.getElementById('end-icon').innerText = '✋';
                 document.getElementById('end-title').innerText = 'Você Decidiu Parar!';
                 document.getElementById('end-desc').innerText = 'Decisão inteligente de gestão de risco. Você garante um excelente prêmio!';
                 document.getElementById('end-prize').innerText = pData.stop;
+            } else if (reason === 'timeout') {
+                document.getElementById('end-icon').innerText = '⏳';
+                document.getElementById('end-title').innerText = 'Tempo Esgotado!';
+                document.getElementById('end-desc').innerText = 'O Takt Time da pergunta estourou. Você leva o valor garantido pelo seu último marco de segurança!';
+                document.getElementById('end-prize').innerText = pData.err;
             } else {
                 document.getElementById('end-icon').innerText = '❌';
                 document.getElementById('end-title').innerText = 'Que Pena, Você Errou!';
-                document.getElementById('end-desc').innerText = 'A jornada foi longe, mas a não conformidade custou o prêmio máximo.';
+                document.getElementById('end-desc').innerText = 'A jornada foi longe, mas a não conformidade custou o prêmio máximo. Você leva o valor do seu marco garantido!';
                 document.getElementById('end-prize').innerText = pData.err;
             }
             openModal('modal-end');
         }
 
         function restartGame() {
+            sessionStorage.removeItem('sgq_milhao_session');
             playClickSound();
             closeModal('modal-end');
             document.getElementById('screen-game').classList.add('hidden');
