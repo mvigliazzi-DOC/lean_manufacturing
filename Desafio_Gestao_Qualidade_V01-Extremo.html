@@ -87,7 +87,7 @@ button:disabled{opacity:0.5;cursor:not-allowed}
   <div class="logo">SENAI</div>
   <div>
     <h1>⚙️ Desafio: Gestão da Qualidade em Rede (Modo Extremo)</h1>
-    <p>Competição em Tempo Real com Takt Time e Ações Táticas de Chão de Fábrica</p>
+    <p>Competição em Tempo Real com Takt Time (Máximo 8 Jogadores)</p>
   </div>
 </header>
 <main>
@@ -106,7 +106,7 @@ button:disabled{opacity:0.5;cursor:not-allowed}
   </section>
 
   <section class="leaderboard-panel">
-    <h3>📊 Status da Linha de Produção (Tempo Real)
+    <h3>📊 Status da Linha de Produção (Tempo Real - Máx. 8 Jogadores)
       <button id="attackBtn" onclick="launchAttack()">⚡ Enviar Apagão no Líder!</button>
     </h3>
     <div class="player-list" id="playerList"></div>
@@ -141,7 +141,11 @@ button:disabled{opacity:0.5;cursor:not-allowed}
 </main>
 
 <script>
+// CONFIGURAÇÃO DO LIMITE MÁXIMO DE JOGADORES NA SALA
+const MAX_PLAYERS = 8;
+
 const allQuestions = [
+  /* PÁGINA 1 */
   { id: 1, page: 1, title: "Desafio 01", q: "A fábrica tem muitas paradas, mas não se sabe quais máquinas causam 80% dos atrasos.", rTitle: "Diagrama de Pareto", r: "Ferramenta gráfica para identificar os poucos problemas vitais (regra 80/20)." },
   { id: 2, page: 1, title: "Desafio 02", q: "Um novo lote apresenta defeitos e a equipe precisa analisar causas em 6 categorias (6M).", rTitle: "Diagrama de Causa e Efeito (Ishikawa)", r: "Estrutura para mapear causas em Mão de obra, Máquina, Material, Método, Medida e Meio Ambiente." },
   { id: 3, page: 1, title: "Desafio 03", q: "Um projeto foi implantado, mas os resultados não se mantêm; é preciso girar o ciclo de controle.", rTitle: "Ciclo PDCA", r: "Metodologia iterativa de 4 etapas (Plan, Do, Check, Act) para melhoria contínua." },
@@ -151,7 +155,19 @@ const allQuestions = [
   { id: 7, page: 1, title: "Desafio 07", q: "Antes de iniciar a produção, a equipe deve prever falhas potenciais e seus riscos.", rTitle: "FMEA", r: "Método preventivo para identificar potenciais modos de falha e avaliar seus riscos." },
   { id: 8, page: 1, title: "Desafio 08", q: "Excesso de estoque no processo; a produção deve ser puxada apenas quando necessário.", rTitle: "Sistema Kanban", r: "Sinalização visual (cartões ou painéis) para controlar e puxar o fluxo de produção." },
   { id: 9, page: 1, title: "Desafio 09", q: "O tempo de setup é de 1 hora, atrasando o lote; o objetivo é reduzir para minutos.", rTitle: "Metodologia SMED", r: "Técnica focada na redução drástica dos tempos de troca de ferramentas e preparação." },
-  { id: 10, page: 1, title: "Desafio 10", q: "Posto de trabalho desorganizado com ferramentas espalhadas gerando perda de tempo.", rTitle: "Programa 5S", r: "Metodologia para organizar, limpar, padronizar e manter a disciplina (Seiri a Shitsuke)." }
+  { id: 10, page: 1, title: "Desafio 10", q: "Posto de trabalho desorganizado com ferramentas espalhadas gerando perda de tempo.", rTitle: "Programa 5S", r: "Metodologia para organizar, limpar, padronizar e manter a disciplina (Seiri a Shitsuke)." },
+
+  /* PÁGINA 2 */
+  { id: 11, page: 2, title: "Desafio 11", q: "Falhas humanas repetitivas ocorrem no encaixe das peças durante a montagem manual.", rTitle: "Poka-Yoke", r: "Dispositivo à prova de erros projetado para prevenir falhas humanas no processo." },
+  { id: 12, page: 2, title: "Desafio 12", q: "Necessidade de identificar o fluxo de valor do estado atual ao futuro eliminando desperdícios.", rTitle: "Mapeamento do Fluxo de Valor (VSM)", r: "Ferramenta visual Lean para representar materiais e informações do fornecedor ao cliente." },
+  { id: 13, page: 2, title: "Desafio 13", q: "Linha de montagem parada por falta de peças no momento exato da montagem.", rTitle: "Just-In-Time (JIT)", r: "Sistema de produção que visa entregar o item certo, no tempo certo e na quantidade certa." },
+  { id: 14, page: 2, title: "Desafio 14", q: "A taxa de defeitos é alta e exige um nível de qualidade com no máximo 3,4 DPMO.", rTitle: "Metodologia Six Sigma", r: "Estratégia quantitativa baseada em DMAIC para redução drástica da variabilidade." },
+  { id: 15, page: 2, title: "Desafio 15", q: "Dificuldade em visualizar os alertas de paradas de máquina para manutenção rápida no setor.", rTitle: "Painel Andon", r: "Sistema de sinalização visual e sonora que indica o status da produção e anomalias." },
+  { id: 16, page: 2, title: "Desafio 16", q: "Determinar se a variabilidade medida provém da peça ou do próprio instrumento de medição.", rTitle: "Análise do Sistema de Medição (MSA / Gage R&R)", r: "Estudo estatístico para avaliar repetitividade e reproducibilidade do sistema de medição." },
+  { id: 17, page: 2, title: "Desafio 17", q: "Necessidade de padronizar as operações para que qualquer operador siga a melhor prática.", rTitle: "Instrução de Trabalho Padronizada (POP)", r: "Documento com instruções passo a passo detalhadas para execução homogênea." },
+  { id: 18, page: 2, title: "Desafio 18", q: "A velocidade da linha não está alinhada ao ritmo exato de demanda do cliente.", rTitle: "Tempo Takt (Takt Time)", r: "Ritmo de produção necessário para atender à taxa de demanda dos clientes." },
+  { id: 19, page: 2, title: "Desafio 19", q: "A empresa precisa avaliar se o processo é capaz de atender às especificações do cliente.", rTitle: "Índices de Capacidade (Cp / Cpk)", r: "Métricas estatísticas que medem a capacidade potencial e real de um processo." },
+  { id: 20, page: 2, title: "Desafio 20", q: "Automatização do equipamento com toque humano para parar imediatamente ao detectar uma falha.", rTitle: "Jidoka (Automação Inteligente)", r: "Princípio Lean de dar à máquina/operador a autonomia de parar a linha se houver defeito." }
 ];
 
 let currentPage = 1;
@@ -163,6 +179,9 @@ let taktInterval = null;
 let filledQuestionIds = [];
 
 // Persistência
+let savedName = localStorage.getItem("qual_playerName") || "Operador 1";
+document.getElementById("playerName").value = savedName;
+
 let myPlayerId = localStorage.getItem("qual_playerId") || "OP-" + Math.random().toString(36).substring(2,7).toUpperCase();
 localStorage.setItem("qual_playerId", myPlayerId);
 
@@ -175,7 +194,7 @@ function initMyPlayerData() {
   playersData[myPlayerId] = {
     name: document.getElementById("playerName").value || "Operador",
     score: totalScore,
-    progress: `${placedCount}/10`,
+    progress: `${filledQuestionIds.length}/20`,
     isBlackout: false
   };
 }
@@ -186,12 +205,12 @@ function createRoom() {
   const roomCode = "QUAL-" + Math.floor(1000 + Math.random() * 9000);
   peer = new Peer(roomCode);
   peer.on('open', id => {
-    document.getElementById("roomInfo").innerHTML = `🔑 Sala: <b>${id}</b>`;
+    document.getElementById("roomInfo").innerHTML = `🔑 Sala: <b>${id}</b> (${Object.keys(playersData).length}/${MAX_PLAYERS})`;
     updateLeaderboard();
   });
   peer.on('connection', conn => {
     connections.push(conn);
-    conn.on('data', data => handleData(data));
+    conn.on('data', data => handleData(data, conn));
   });
 }
 
@@ -206,13 +225,37 @@ function joinRoom() {
       document.getElementById("roomInfo").innerHTML = `✅ Conectado: <b>${roomCode}</b>`;
       hostConn.send({ type: 'JOIN', playerId: myPlayerId, playerData: playersData[myPlayerId] });
     });
-    hostConn.on('data', data => handleData(data));
+    hostConn.on('data', data => handleData(data, hostConn));
   });
 }
 
-function handleData(data) {
-  if (data.type === 'JOIN' && isHost) { playersData[data.playerId] = data.playerData; broadcast(); }
-  else if (data.type === 'UPDATE') { playersData = data.players; updateLeaderboard(); }
+function handleData(data, conn) {
+  if (data.type === 'JOIN' && isHost) {
+    // VERIFICA SE ATINGIU O LIMITE DE 8 JOGADORES
+    const totalCurrentPlayers = Object.keys(playersData).length;
+    const isAlreadyInRoom = !!playersData[data.playerId];
+
+    if (totalCurrentPlayers >= MAX_PLAYERS && !isAlreadyInRoom) {
+      if (conn && conn.open) {
+        conn.send({ type: 'ROOM_FULL', message: `A sala já atingiu o limite máximo de ${MAX_PLAYERS} jogadores!` });
+      }
+      return;
+    }
+
+    playersData[data.playerId] = data.playerData; 
+    broadcast(); 
+  }
+  else if (data.type === 'ROOM_FULL') {
+    showFeedback(`❌ ${data.message}`, "error");
+    document.getElementById("roomInfo").innerHTML = `<span style="color:#ef4444;">⚠️ Sala Cheia (${MAX_PLAYERS}/${MAX_PLAYERS})</span>`;
+  }
+  else if (data.type === 'UPDATE') { 
+    playersData = data.players; 
+    updateLeaderboard(); 
+  }
+  else if (data.type === 'ATTACK_REQ' && isHost) {
+    broadcastAttack(data.targetId);
+  }
   else if (data.type === 'ATTACK' && data.targetId === myPlayerId) {
     document.getElementById("answerCards").classList.add("blackout");
     showFeedback("⚠️ APAGÃO! Um concorrente parou sua iluminação por 6 segundos!", "error");
@@ -226,7 +269,7 @@ function broadcast() {
 }
 
 function sendProgress() {
-  playersData[myPlayerId] = { name: document.getElementById("playerName").value, score: totalScore, progress: `${placedCount}/10` };
+  playersData[myPlayerId] = { name: document.getElementById("playerName").value, score: totalScore, progress: `${filledQuestionIds.length}/20` };
   if (isHost) broadcast();
   else if (hostConn && hostConn.open) hostConn.send({ type: 'JOIN', playerId: myPlayerId, playerData: playersData[myPlayerId] });
   
@@ -252,6 +295,12 @@ function broadcastAttack(targetId) {
 function updateLeaderboard() {
   const el = document.getElementById("playerList");
   el.innerHTML = "";
+  const currentCount = Object.keys(playersData).length;
+
+  if (isHost) {
+    document.getElementById("roomInfo").innerHTML = `🔑 Sala: <b>${peer ? peer.id : '---'}</b> (${currentCount}/${MAX_PLAYERS})`;
+  }
+
   Object.keys(playersData).forEach(id => {
     const p = playersData[id];
     el.innerHTML += `<div class="player-card ${id===myPlayerId?'is-me':''}"><b>${p.name}</b><br>🎯 Acertos: ${p.progress} | 🏆 Pts: ${p.score}</div>`;
@@ -278,7 +327,8 @@ function startTaktTimer() {
 
 function loadPage(page) {
   currentPage = page;
-  placedCount = 0;
+  document.getElementById("pageIndicator").textContent = `Página ${currentPage} / 2`;
+  
   const qSlots = document.getElementById("questionSlots");
   qSlots.innerHTML = "";
   const currentQuestions = allQuestions.filter(i => i.page === page);
@@ -314,8 +364,9 @@ function dropItem(e, slot) {
   if (slot.dataset.id == id) {
     slot.classList.add("filled");
     document.getElementById("card-" + id).classList.add("used");
-    placedCount++;
-    filledQuestionIds.push(id);
+    if (!filledQuestionIds.includes(id)) {
+      filledQuestionIds.push(id);
+    }
     totalScore += 100 * comboStreak;
     comboStreak++;
     showFeedback(`✅ Certo! +${100*(comboStreak-1)} pts`, "success");
