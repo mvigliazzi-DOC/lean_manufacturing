@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora ABNT NBR 6158 (ISO 286) - Tolerâncias e Ajustes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cad: {
+                            950: '#0a0f18',
+                            900: '#111827',
+                            850: '#162033',
+                            800: '#1e293b',
+                            700: '#334155',
+                            accent: '#0284c7',
+                            hole: '#2563eb',
+                            shaft: '#d97706'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilo sutil de grade técnica CAD no fundo */
+        .cad-grid {
+            background-size: 24px 24px;
+            background-image: 
+                linear-gradient(to right, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+        }
+        /* Scrollbar discreta */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-sky-600 selection:text-white">
+
+    <!-- Cabeçalho Superior Estilo Engenharia / CAD -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-sky-600/20 border border-sky-500/40 flex items-center justify-center text-sky-400 shrink-0">
+                    <!-- Ícone Técnico Paquímetro / Tolerância -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 17h16M7 4v16M17 4v16M10 12h4m-2-2v4"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">ABNT NBR 6158</h1>
+                        <span class="px-2 py-0.5 text-[11px] font-mono font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-md">ISO 286-1 / 286-2</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Sistema de Tolerâncias e Ajustes Mecânicos (1 mm a 500 mm)</p>
+                </div>
+            </div>
+
+            <!-- Seletor de Modo de Operação -->
+            <div class="flex bg-slate-800 p-1 rounded-xl border border-slate-700 self-start sm:self-auto">
+                <button id="btnModeFit" onclick="setMode('fit')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-sky-600 text-white shadow">
+                    Modo Ajuste (Furo + Eixo)
+                </button>
+                <button id="btnModeSingle" onclick="setMode('single')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-300 hover:text-white">
+                    Elemento Individual
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Alerta de Validação / Mensagem do Sistema (Substitui alert()) -->
+        <div id="validationBanner" class="hidden bg-rose-50 border-l-4 border-rose-500 text-rose-800 p-4 rounded-xl shadow-sm flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-rose-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <span id="validationText" class="text-sm font-medium">A dimensão nominal deve estar entre 1 mm e 500 mm conforme os escalões da norma.</span>
+            </div>
+            <button onclick="resetNominal()" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg transition">Corrigir</button>
+        </div>
+
+        <!-- Painel Superior de Controle e Parâmetros -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Coluna Esquerda: Entrada de Dados (5 colunas em desktop) -->
+            <section class="lg:col-span-5 bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-sky-600"></span>
+                        Parâmetros de Entrada
+                    </h2>
+                    <span id="stepBadge" class="text-xs font-mono bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200">
+                        Escalão: &gt; 30 a 50 mm
+                    </span>
+                </div>
+
+                <!-- Input Dimensão Nominal -->
+                <div>
+                    <div class="flex justify-between items-baseline mb-1.5">
+                        <label for="nominalInput" class="block text-sm font-semibold text-slate-700">
+                            Dimensão Nominal ($\varnothing$ / L)
+                        </label>
+                        <span class="text-xs text-slate-400 font-mono">Faixa: 1 – 500 mm</span>
+                    </div>
+                    <div class="relative flex items-center">
+                        <span class="absolute left-3.5 text-slate-400 font-mono font-bold text-base select-none">Ø</span>
+                        <input 
+                            type="number" 
+                            id="nominalInput" 
+                            value="50" 
+                            min="1" 
+                            max="500" 
+                            step="any"
+                            oninput="handleInput()"
+                            class="w-full pl-9 pr-14 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
+                        >
+                        <span class="absolute right-3.5 text-xs font-mono font-semibold text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded">mm</span>
+                    </div>
+                    <!-- Atalhos rápidos de diâmetros comuns -->
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <span class="text-[11px] text-slate-400 self-center mr-1">Exemplos:</span>
+                        <button type="button" onclick="setNominal(10)" class="px-2 py-0.5 text-xs font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition">Ø10</button>
+                        <button type="button" onclick="setNominal(25)" class="px-2 py-0.5 text-xs font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition">Ø25</button>
+                        <button type="button" onclick="setNominal(50)" class="px-2 py-0.5 text-xs font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition">Ø50</button>
+                        <button type="button" onclick="setNominal(100)" class="px-2 py-0.5 text-xs font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition">Ø100</button>
+                        <button type="button" onclick="setNominal(220)" class="px-2 py-0.5 text-xs font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition">Ø220</button>
+                    </div>
+                </div>
+
+                <!-- MODO INDIVIDUAL: Seletor Furo ou Eixo -->
+                <div id="singleControls" class="hidden space-y-4 pt-2 border-t border-slate-100">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Tipo de Elemento</label>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <button type="button" id="btnTypeHole" onclick="setSingleType('hole')" class="py-2.5 px-3 rounded-xl border-2 border-blue-600 bg-blue-50 text-blue-800 font-semibold text-sm flex items-center justify-center gap-2 transition">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                                FURO (Maiúsculas)
+                            </button>
+                            <button type="button" id="btnTypeShaft" onclick="setSingleType('shaft')" class="py-2.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-semibold text-sm flex items-center justify-center gap-2 transition">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+                                EIXO (Minúsculas)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="singlePos" class="block text-xs font-semibold text-slate-600 mb-1">Posição (Afastamento)</label>
+                            <select id="singlePos" onchange="calculateAll()" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-xl font-mono text-sm font-bold text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none"></select>
+                        </div>
+                        <div>
+                            <label for="singleIT" class="block text-xs font-semibold text-slate-600 mb-1">Grau (Qualidade IT)</label>
+                            <select id="singleIT" onchange="calculateAll()" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-xl font-mono text-sm font-bold text-slate-800 focus:ring-2 focus:ring-sky-500 focus:outline-none"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODO AJUSTE: Seletores Simultâneos de Furo e Eixo -->
+                <div id="fitControls" class="space-y-4 pt-2 border-t border-slate-100">
+                    <!-- Bloco Furo -->
+                    <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-blue-800 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                                Tolerância do Furo (Interno)
+                            </span>
+                            <span id="holeDesignationBadge" class="font-mono text-xs font-bold bg-blue-600 text-white px-2 py-0.5 rounded">H7</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label for="holePos" class="block text-[11px] font-medium text-blue-900/70 mb-1">Posição (A – ZC)</label>
+                                <select id="holePos" onchange="calculateAll()" class="w-full py-2 px-2.5 bg-white border border-blue-200 rounded-lg font-mono text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
+                            </div>
+                            <div>
+                                <label for="holeIT" class="block text-[11px] font-medium text-blue-900/70 mb-1">Qualidade (IT)</label>
+                                <select id="holeIT" onchange="calculateAll()" class="w-full py-2 px-2.5 bg-white border border-blue-200 rounded-lg font-mono text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bloco Eixo -->
+                    <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-amber-600"></span>
+                                Tolerância do Eixo (Externo)
+                            </span>
+                            <span id="shaftDesignationBadge" class="font-mono text-xs font-bold bg-amber-600 text-white px-2 py-0.5 rounded">g6</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label for="shaftPos" class="block text-[11px] font-medium text-amber-900/70 mb-1">Posição (a – zc)</label>
+                                <select id="shaftPos" onchange="calculateAll()" class="w-full py-2 px-2.5 bg-white border border-amber-200 rounded-lg font-mono text-sm font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none"></select>
+                            </div>
+                            <div>
+                                <label for="shaftIT" class="block text-[11px] font-medium text-amber-900/70 mb-1">Qualidade (IT)</label>
+                                <select id="shaftIT" onchange="calculateAll()" class="w-full py-2 px-2.5 bg-white border border-amber-200 rounded-lg font-mono text-sm font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Atalhos de Ajustes Recomendados NBR 6158 -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Ajustes Recomendados (Furo-Base)</span>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-1.5">
+                            <button type="button" onclick="applyPreset('H7', 'f7')" class="preset-btn text-left p-2 rounded-lg border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 transition group">
+                                <div class="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700">H7/f7</div>
+                                <div class="text-[10px] text-slate-500 truncate">Folga Livre</div>
+                            </button>
+                            <button type="button" onclick="applyPreset('H7', 'g6')" class="preset-btn text-left p-2 rounded-lg border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 transition group">
+                                <div class="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700">H7/g6</div>
+                                <div class="text-[10px] text-slate-500 truncate">Deslizante</div>
+                            </button>
+                            <button type="button" onclick="applyPreset('H7', 'h6')" class="preset-btn text-left p-2 rounded-lg border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 transition group">
+                                <div class="font-mono text-xs font-bold text-slate-800 group-hover:text-emerald-700">H7/h6</div>
+                                <div class="text-[10px] text-slate-500 truncate">Desliz. Justo</div>
+                            </button>
+                            <button type="button" onclick="applyPreset('H7', 'js6')" class="preset-btn text-left p-2 rounded-lg border border-slate-200 hover:border-amber-400 hover:bg-amber-50/50 transition group">
+                                <div class="font-mono text-xs font-bold text-slate-800 group-hover:text-amber-700">H7/js6</div>
+                                <div class="text-[10px] text-slate-500 truncate">Incerto Leve</div>
+                            </button>
+                            <button type="button" onclick="applyPreset('H7', 'k6')" class="preset-btn text-left p-2 rounded-lg border border-slate-200 hover:border-amber-400 hover:bg-amber-50/50 transition group">
+                                <div class="font-mono text-xs font-bold text-slate-800 group-hover:text-amber-700">H7/k6</div>
+                                <div class="text-[10px] text-slate-500 truncate">Incerto</div>
+                            </button>
+                            <button type="button" onclick="applyPreset('H7', 'n6')" class="preset-btn text-left p-2 rounded-lg border border-slate-200 hover:border-amber-400 hover:bg-amber-50/50 transition group">
+                                <div class="font-mono text-xs font-bold text-slate-800 group-hover:text-amber-700">H7/n6</div>
+                                <div class="text-[10px] text-slate-500 truncate">Inc. Apertado</div>
+                            </button>
+                            <button type="button" onclick="applyPreset('H7', 'p6')" class="preset-btn text-left p-2 rounded-lg border border-slate-200 hover:border-rose-400 hover:bg-rose-50/50 transition group">
+                                <div class="font-mono text-xs font-bold text-slate-800 group-hover:text-rose-700">H7/p6</div>
+                                <div class="text-[10px] text-slate-500 truncate">Interf. Leve</div>
+                            </button>
+                            <button type="button" onclick="applyPreset('H7', 's6')" class="preset-btn text-left p-2 rounded-lg border border-slate-200 hover:border-rose-400 hover:bg-rose-50/50 transition group">
+                                <div class="font-mono text-xs font-bold text-slate-800 group-hover:text-rose-700">H7/s6</div>
+                                <div class="text-[10px] text-slate-500 truncate">Interf. Forte</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Coluna Direita: Diagrama Técnico Visual + Classificação (7 colunas em desktop) -->
+            <section class="lg:col-span-7 flex flex-col gap-6">
+                
+                <!-- Banner de Classificação do Ajuste (Modo Ajuste) ou Resumo ISO (Modo Individual) -->
+                <div id="classificationCard" class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2.5">
+                            <span id="isoNotationDisplay" class="font-mono text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Ø 50 H7/g6</span>
+                            <span id="fitTypeBadge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Ajuste com Folga
+                            </span>
+                        </div>
+                        <p id="fitDescriptionText" class="text-xs sm:text-sm text-slate-500 mt-1">
+                            O diâmetro mínimo do furo é sempre maior que o diâmetro máximo do eixo. Garante deslizamento suave.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="copySummary()" id="btnCopy" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 flex items-center gap-1.5 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                            <span id="copyBtnText">Copiar Cota</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Diagrama Gráfico Interativo (SVG Técnico) -->
+                <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 flex-1 flex flex-col">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-sky-600"></span>
+                            Diagrama de Campos de Tolerância ($\mu\text{m}$)
+                        </h3>
+                        <div class="flex items-center gap-4 text-xs font-medium">
+                            <span id="legendHole" class="flex items-center gap-1.5 text-slate-700">
+                                <span class="w-3 h-3 rounded-sm bg-blue-600/25 border border-blue-600 inline-block"></span>
+                                Furo (ES / EI)
+                            </span>
+                            <span id="legendShaft" class="flex items-center gap-1.5 text-slate-700">
+                                <span class="w-3 h-3 rounded-sm bg-amber-500/25 border border-amber-600 inline-block"></span>
+                                Eixo (es / ei)
+                            </span>
+                            <span class="flex items-center gap-1.5 text-slate-500 font-mono">
+                                <span class="w-4 border-t-2 border-dashed border-slate-800 inline-block"></span>
+                                Linha Zero
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Container Responsivo do SVG -->
+                    <div class="relative w-full flex-1 min-h-[270px] bg-slate-50/80 cad-grid rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center">
+                        <svg id="toleranceSvg" class="w-full h-full min-h-[270px]" viewBox="0 0 640 280" preserveAspectRatio="xMidYMid meet"></svg>
+                    </div>
+
+                    <!-- Barra de Metadados Matemáticos da Norma -->
+                    <div class="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-500">
+                        <span id="mathMetaD">D (Média Geométrica): 38.730 mm</span>
+                        <span id="mathMetaI">Unidade de Tolerância (i): 1.561 µm</span>
+                        <span>Base: ABNT NBR 6158 / ISO 286</span>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+
+        <!-- Cartões de Resultados Numéricos -->
+        <section id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Preenchido dinamicamente pelo JavaScript -->
+        </section>
+
+    </main>
+
+    <!-- Rodapé Técnico -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+            <p>Cálculos baseados nas equações analíticas e escalões nominais da norma <strong>ABNT NBR 6158 (ISO 286)</strong>.</p>
+            <p class="font-mono text-[11px] text-slate-400">1 µm = 0,001 mm | Temperatura de referência padrão: 20 °C</p>
+        </div>
+    </footer>
+
+    <script>
+        /**
+         * ============================================================================
+         * MOTOR DE CÁLCULO ABNT NBR 6158 (ISO 286)
+         * ============================================================================
+         * Implementação completa das tabelas de escalões nominais (1 a 500 mm),
+         * graus de tolerância padrão (IT5 a IT16), cálculo de i (unidade de tolerância)
+         * e fórmulas exatas dos afastamentos fundamentais para Eixos (a-zc) e Furos (A-ZC).
+         */
+
+        // 1. Escalões de Dimensões Nominais da NBR 6158 (em mm)
+        const NOMINAL_STEPS = [
+            { min: 1,   max: 3,   label: "1 a 3 mm" },
+            { min: 3,   max: 6,   label: "> 3 a 6 mm" },
+            { min: 6,   max: 10,  label: "> 6 a 10 mm" },
+            { min: 10,  max: 18,  label: "> 10 a 18 mm" },
+            { min: 18,  max: 30,  label: "> 18 a 30 mm" },
+            { min: 30,  max: 50,  label: "> 30 a 50 mm" },
+            { min: 50,  max: 80,  label: "> 50 a 80 mm" },
+            { min: 80,  max: 120, label: "> 80 a 120 mm" },
+            { min: 120, max: 180, label: "> 120 a 180 mm" },
+            { min: 180, max: 250, label: "> 180 a 250 mm" },
+            { min: 250, max: 315, label: "> 250 a 315 mm" },
+            { min: 315, max: 400, label: "> 315 a 400 mm" },
+            { min: 400, max: 500, label: "> 400 a 500 mm" }
+        ];
+
+        // Multiplicadores padrão ISO 286 para IT5 a IT16 (em função de i)
+        const IT_MULTIPLIERS = {
+            5: 7,
+            6: 10,
+            7: 16,
+            8: 25,
+            9: 40,
+            10: 64,
+            11: 100,
+            12: 160,
+            13: 250,
+            14: 400,
+            15: 640,
+            16: 1000
+        };
+
+        // Lista ordenada de posições de tolerância
+        const SHAFT_POSITIONS = [
+            { code: 'a',  group: 'Folga Ampla' },
+            { code: 'b',  group: 'Folga Ampla' },
+            { code: 'c',  group: 'Folga Ampla' },
+            { code: 'cd', group: 'Folga' },
+            { code: 'd',  group: 'Folga (Comum)' },
+            { code: 'e',  group: 'Folga (Comum)' },
+            { code: 'ef', group: 'Folga' },
+            { code: 'f',  group: 'Folga (Comum)' },
+            { code: 'fg', group: 'Folga' },
+            { code: 'g',  group: 'Folga (Comum)' },
+            { code: 'h',  group: 'Base / Folga Zero (Comum)' },
+            { code: 'js', group: 'Incerto Simétrico (Comum)' },
+            { code: 'j',  group: 'Incerto' },
+            { code: 'k',  group: 'Incerto (Comum)' },
+            { code: 'm',  group: 'Incerto (Comum)' },
+            { code: 'n',  group: 'Incerto / Aperto (Comum)' },
+            { code: 'p',  group: 'Interferência (Comum)' },
+            { code: 'r',  group: 'Interferência (Comum)' },
+            { code: 's',  group: 'Interferência (Comum)' },
+            { code: 't',  group: 'Interferência' },
+            { code: 'u',  group: 'Interferência' },
+            { code: 'v',  group: 'Interferência' },
+            { code: 'x',  group: 'Interferência' },
+            { code: 'y',  group: 'Interferência' },
+            { code: 'z',  group: 'Interferência' },
+            { code: 'za', group: 'Interferência Extrema' },
+            { code: 'zb', group: 'Interferência Extrema' },
+            { code: 'zc', group: 'Interferência Extrema' }
+        ];
+
+        const HOLE_POSITIONS = SHAFT_POSITIONS.map(p => ({
+            code: p.code.toUpperCase(),
+            group: p.group
+        }));
+
+        const IT_GRADES = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+
+        // Estado Global da Aplicação
+        let appState = {
+            mode: 'fit',          // 'fit' ou 'single'
+            nominal: 50,
+            singleType: 'hole',   // 'hole' ou 'shaft'
+            singlePos: 'H',
+            singleIT: 7,
+            holePos: 'H',
+            holeIT: 7,
+            shaftPos: 'g',
+            shaftIT: 6
+        };
+
+        /**
+         * Encontra o escalão nominal da NBR 6158 para um diâmetro d (1 a 500 mm)
+         */
+        function getNominalStep(d) {
+            if (d >= 1 && d <= 3) return NOMINAL_STEPS[0];
+            for (let i = 1; i < NOMINAL_STEPS.length; i++) {
+                if (d > NOMINAL_STEPS[i].min && d <= NOMINAL_STEPS[i].max) {
+                    return NOMINAL_STEPS[i];
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Arredondamento conforme regras de padronização da ISO 286 / NBR 6158
+         * para valores calculados pelas fórmulas analíticas (em µm).
+         */
+        function roundISO(val) {
+            const sign = val < 0 ? -1 : 1;
+            const absVal = Math.abs(val);
+            if (absVal <= 45) return sign * Math.round(absVal);
+            if (absVal <= 60) return sign * (Math.round(absVal / 2) * 2);
+            if (absVal <= 100) return sign * (Math.round(absVal / 5) * 5);
+            if (absVal <= 200) return sign * (Math.round(absVal / 10) * 10);
+            if (absVal <= 500) return sign * (Math.round(absVal / 20) * 20);
+            return sign * (Math.round(absVal / 50) * 50);
+        }
+
+        /**
+         * Calcula a Tolerância Padrão IT (em µm) para uma média geométrica D e grau IT
+         */
+        function computeITValue(D, itGrade) {
+            // Fator de tolerância padrão i (µm) para D <= 500 mm
+            const i = 0.45 * Math.cbrt(D) + 0.001 * D;
+            const mult = IT_MULTIPLIERS[itGrade] || 16;
+            const rawIT = mult * i;
+
+            // Arredondamento padrão ISO 286 para valores IT
+            if (rawIT < 10) return Math.round(rawIT * 10) / 10; // Ex: 4.5 ou inteiro próximo
+            if (rawIT <= 60) return Math.round(rawIT);
+            if (rawIT <= 100) return Math.round(rawIT / 2) * 2;
+            if (rawIT <= 250) return Math.round(rawIT / 5) * 5;
+            if (rawIT <= 600) return Math.round(rawIT / 10) * 10;
+            if (rawIT <= 1200) return Math.round(rawIT / 20) * 20;
+            return Math.round(rawIT / 50) * 50;
+        }
+
+        /**
+         * Calcula os afastamentos fundamentais de EIXOS (es, ei) em µm
+         * Baseado nas fórmulas analíticas exatas da ISO 286-1 / NBR 6158.
+         */
+        function computeShaftDeviations(D, pos, itGrade, IT_val) {
+            const p = pos.toLowerCase();
+            let es = 0;
+            let ei = 0;
+
+            // Afastamento superior (es) para posições a até h (es <= 0)
+            if (['a', 'b', 'c', 'cd', 'd', 'e', 'ef', 'f', 'fg', 'g', 'h'].includes(p)) {
+                switch (p) {
+                    case 'a':
+                        es = D <= 120 ? -(265 + 1.3 * D) : -(3.5 * D);
+                        break;
+                    case 'b':
+                        es = D <= 160 ? -(140 + 0.85 * D) : -(1.8 * D);
+                        break;
+                    case 'c':
+                        es = D <= 40 ? -(52 * Math.pow(D, 0.2)) : -(95 + 0.8 * D);
+                        break;
+                    case 'd':
+                        es = -(16 * Math.pow(D, 0.44));
+                        break;
+                    case 'e':
+                        es = -(11 * Math.pow(D, 0.41));
+                        break;
+                    case 'f':
+                        es = -(5.5 * Math.pow(D, 0.41));
+                        break;
+                    case 'g':
+                        es = -(2.5 * Math.pow(D, 0.34));
+                        break;
+                    case 'cd':
+                        // Média geométrica entre c e d
+                        const esc = D <= 40 ? -(52 * Math.pow(D, 0.2)) : -(95 + 0.8 * D);
+                        const esd = -(16 * Math.pow(D, 0.44));
+                        es = -Math.sqrt(Math.abs(esc * esd));
+                        break;
+                    case 'ef':
+                        const ese = -(11 * Math.pow(D, 0.41));
+                        const esf = -(5.5 * Math.pow(D, 0.41));
+                        es = -Math.sqrt(Math.abs(ese * esf));
+                        break;
+                    case 'fg':
+                        const esf2 = -(5.5 * Math.pow(D, 0.41));
+                        const esg = -(2.5 * Math.pow(D, 0.34));
+                        es = -Math.sqrt(Math.abs(esf2 * esg));
+                        break;
+                    case 'h':
+                        es = 0;
+                        break;
+                }
+                es = (p === 'h') ? 0 : roundISO(es);
+                ei = es - IT_val;
+                return { es, ei };
+            }
+
+            // Posição simétrica js
+            if (p === 'js') {
+                es = Math.round((IT_val / 2) * 10) / 10;
+                ei = -es;
+                return { es, ei };
+            }
+
+            // Posição j (transição assimétrica)
+            if (p === 'j') {
+                if (itGrade <= 6) {
+                    ei = D <= 10 ? -2 : (D <= 50 ? -4 : -5);
+                } else if (itGrade === 7) {
+                    ei = D <= 10 ? -4 : (D <= 50 ? -6 : -8);
+                } else {
+                    ei = -Math.round(IT_val * 0.35);
+                }
+                es = ei + IT_val;
+                return { es, ei };
+            }
+
+            // Afastamento inferior (ei) para posições k até zc (ei >= 0)
+            const i = 0.45 * Math.cbrt(D) + 0.001 * D;
+            const IT7 = computeITValue(D, 7);
+
+            switch (p) {
+                case 'k':
+                    ei = (itGrade <= 7) ? (D <= 3 ? 0 : roundISO(0.6 * Math.cbrt(D))) : 0;
+                    break;
+                case 'm':
+                    ei = roundISO(IT7 - computeITValue(D, 6));
+                    if (ei < 2 && D > 3) ei = Math.round(i + 1);
+                    break;
+                case 'n':
+                    ei = roundISO(5 * Math.pow(D, 0.34));
+                    break;
+                case 'p':
+                    ei = roundISO(IT7 + 0.5 * i);
+                    break;
+                case 'r':
+                    // Média geométrica entre p e s
+                    const eip = IT7 + 0.5 * i;
+                    const eis = IT7 + 0.4 * D;
+                    ei = roundISO(Math.sqrt(eip * eis));
+                    break;
+                case 's':
+                    ei = roundISO(IT7 + 0.4 * D);
+                    break;
+                case 't':
+                    ei = roundISO(IT7 + 0.63 * D);
+                    break;
+                case 'u':
+                    ei = roundISO(IT7 + D);
+                    break;
+                case 'v':
+                    ei = roundISO(IT7 + 1.25 * D);
+                    break;
+                case 'x':
+                    ei = roundISO(IT7 + 1.6 * D);
+                    break;
+                case 'y':
+                    ei = roundISO(IT7 + 2.0 * D);
+                    break;
+                case 'z':
+                    ei = roundISO(IT7 + 2.5 * D);
+                    break;
+                case 'za':
+                    ei = roundISO(IT7 + 3.15 * D);
+                    break;
+                case 'zb':
+                    ei = roundISO(IT7 + 4.0 * D);
+                    break;
+                case 'zc':
+                    ei = roundISO(IT7 + 5.0 * D);
+                    break;
+            }
+
+            es = ei + IT_val;
+            return { es, ei };
+        }
+
+        /**
+         * Calcula os afastamentos fundamentais de FUROS (ES, EI) em µm
+         * Pela regra de espelhamento da ISO 286 / NBR 6158 + Regra Delta (Δ) para K a ZC em graus finos.
+         */
+        function computeHoleDeviations(D, pos, itGrade, IT_val) {
+            const P = pos.toUpperCase();
+            const lower = P.toLowerCase();
+
+            // Espelhamento direto para A até H e JS
+            if (['A', 'B', 'C', 'CD', 'D', 'E', 'EF', 'F', 'FG', 'G', 'H', 'JS'].includes(P)) {
+                const shaftRef = computeShaftDeviations(D, lower, itGrade, IT_val);
+                if (P === 'H') {
+                    return { ES: IT_val, EI: 0 };
+                }
+                if (P === 'JS') {
+                    return { ES: shaftRef.es, EI: shaftRef.ei };
+                }
+                // Para A..G: EI = -es, ES = -ei
+                return {
+                    ES: -shaftRef.ei,
+                    EI: -shaftRef.es
+                };
+            }
+
+            // Posição J para furos
+            if (P === 'J') {
+                const shaftJ = computeShaftDeviations(D, 'j', itGrade, IT_val);
+                return {
+                    ES: -shaftJ.ei,
+                    EI: -shaftJ.es
+                };
+            }
+
+            // Para K até ZC:
+            // Regra geral ISO 286: ES = -ei (do eixo correspondente), e para graus finos (IT <= 8 em K,M,N ou IT <= 7 em P..ZC) soma-se Δ = IT_n - IT_(n-1)
+            const shaftRef = computeShaftDeviations(D, lower, itGrade, IT_val);
+            let delta = 0;
+
+            const isKMN = ['K', 'M', 'N'].includes(P);
+            if ((isKMN && itGrade <= 8) || (!isKMN && itGrade <= 7)) {
+                const itPrev = computeITValue(D, itGrade - 1);
+                delta = IT_val - itPrev;
+            }
+
+            const ES = Math.round((-shaftRef.ei + delta) * 10) / 10;
+            const EI = Math.round((ES - IT_val) * 10) / 10;
+            return { ES, EI };
+        }
+
+        /**
+         * Formata valores numéricos com sinal explícito (+ ou -)
+         */
+        function formatSigned(val, decimals = 0) {
+            if (Math.abs(val) < 1e-9) return decimals === 0 ? "0" : (0).toFixed(decimals);
+            const sign = val > 0 ? "+" : "-";
+            return sign + Math.abs(val).toFixed(decimals);
+        }
+
+        /**
+         * Inicializa os menus suspensos (selects)
+         */
+        function initSelects() {
+            const holePosEl = document.getElementById('holePos');
+            const shaftPosEl = document.getElementById('shaftPos');
+            const holeITEl = document.getElementById('holeIT');
+            const shaftITEl = document.getElementById('shaftIT');
+            const singleITEl = document.getElementById('singleIT');
+
+            HOLE_POSITIONS.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.code;
+                opt.textContent = `${item.code}  —  ${item.group}`;
+                if (item.code === 'H') opt.selected = true;
+                holePosEl.appendChild(opt);
+            });
+
+            SHAFT_POSITIONS.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.code;
+                opt.textContent = `${item.code}  —  ${item.group}`;
+                if (item.code === 'g') opt.selected = true;
+                shaftPosEl.appendChild(opt);
+            });
+
+            [holeITEl, shaftITEl, singleITEl].forEach((sel, idx) => {
+                IT_GRADES.forEach(grade => {
+                    const opt = document.createElement('option');
+                    opt.value = grade;
+                    opt.textContent = `IT${grade}`;
+                    if (idx === 0 && grade === 7) opt.selected = true;
+                    if (idx === 1 && grade === 6) opt.selected = true;
+                    if (idx === 2 && grade === 7) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            });
+
+            populateSinglePosSelect();
+        }
+
+        function populateSinglePosSelect() {
+            const singlePosEl = document.getElementById('singlePos');
+            singlePosEl.innerHTML = '';
+            const list = appState.singleType === 'hole' ? HOLE_POSITIONS : SHAFT_POSITIONS;
+            const defaultCode = appState.singleType === 'hole' ? 'H' : 'h';
+
+            list.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.code;
+                opt.textContent = `${item.code}  —  ${item.group}`;
+                if (item.code === defaultCode) opt.selected = true;
+                singlePosEl.appendChild(opt);
+            });
+        }
+
+        /**
+         * Alterna entre Modo Ajuste (Furo + Eixo) e Modo Individual
+         */
+        function setMode(mode) {
+            appState.mode = mode;
+            const btnFit = document.getElementById('btnModeFit');
+            const btnSingle = document.getElementById('btnModeSingle');
+            const fitControls = document.getElementById('fitControls');
+            const singleControls = document.getElementById('singleControls');
+            const legendHole = document.getElementById('legendHole');
+            const legendShaft = document.getElementById('legendShaft');
+
+            if (mode === 'fit') {
+                btnFit.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-sky-600 text-white shadow";
+                btnSingle.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-300 hover:text-white";
+                fitControls.classList.remove('hidden');
+                singleControls.classList.add('hidden');
+                legendHole.classList.remove('hidden');
+                legendShaft.classList.remove('hidden');
+            } else {
+                btnSingle.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-sky-600 text-white shadow";
+                btnFit.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-300 hover:text-white";
+                singleControls.classList.remove('hidden');
+                fitControls.classList.add('hidden');
+                updateSingleLegend();
+            }
+            calculateAll();
+        }
+
+        function setSingleType(type) {
+            appState.singleType = type;
+            const btnHole = document.getElementById('btnTypeHole');
+            const btnShaft = document.getElementById('btnTypeShaft');
+
+            if (type === 'hole') {
+                btnHole.className = "py-2.5 px-3 rounded-xl border-2 border-blue-600 bg-blue-50 text-blue-800 font-semibold text-sm flex items-center justify-center gap-2 transition";
+                btnShaft.className = "py-2.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-semibold text-sm flex items-center justify-center gap-2 transition";
+            } else {
+                btnShaft.className = "py-2.5 px-3 rounded-xl border-2 border-amber-600 bg-amber-50 text-amber-800 font-semibold text-sm flex items-center justify-center gap-2 transition";
+                btnHole.className = "py-2.5 px-3 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-semibold text-sm flex items-center justify-center gap-2 transition";
+            }
+            updateSingleLegend();
+            populateSinglePosSelect();
+            calculateAll();
+        }
+
+        function updateSingleLegend() {
+            const legendHole = document.getElementById('legendHole');
+            const legendShaft = document.getElementById('legendShaft');
+            if (appState.singleType === 'hole') {
+                legendHole.classList.remove('hidden');
+                legendShaft.classList.add('hidden');
+            } else {
+                legendHole.classList.add('hidden');
+                legendShaft.classList.remove('hidden');
+            }
+        }
+
+        function setNominal(val) {
+            document.getElementById('nominalInput').value = val;
+            handleInput();
+        }
+
+        function resetNominal() {
+            document.getElementById('nominalInput').value = 50;
+            handleInput();
+        }
+
+        function applyPreset(holeCode, shaftCode) {
+            const hPos = holeCode.replace(/[0-9]/g, '');
+            const hIT = holeCode.replace(/[^0-9]/g, '');
+            const sPos = shaftCode.replace(/[0-9]/g, '');
+            const sIT = shaftCode.replace(/[^0-9]/g, '');
+
+            document.getElementById('holePos').value = hPos;
+            document.getElementById('holeIT').value = hIT;
+            document.getElementById('shaftPos').value = sPos;
+            document.getElementById('shaftIT').value = sIT;
+            calculateAll();
+        }
+
+        function handleInput() {
+            const rawVal = parseFloat(document.getElementById('nominalInput').value);
+            const banner = document.getElementById('validationBanner');
+
+            if (isNaN(rawVal) || rawVal < 1 || rawVal > 500) {
+                banner.classList.remove('hidden');
+                return;
+            }
+            banner.classList.add('hidden');
+            appState.nominal = rawVal;
+            calculateAll();
+        }
+
+        /**
+         * Função Principal de Cálculo e Atualização de Interface
+         */
+        function calculateAll() {
+            const nom = appState.nominal;
+            const step = getNominalStep(nom);
+            if (!step) return;
+
+            // Média geométrica D do escalão nominal (mm) e fator i (µm)
+            const D = Math.sqrt(step.min * step.max);
+            const i = 0.45 * Math.cbrt(D) + 0.001 * D;
+
+            document.getElementById('stepBadge').textContent = `Escalão: ${step.label}`;
+            document.getElementById('mathMetaD').textContent = `D (Média Geométrica): ${D.toFixed(3)} mm`;
+            document.getElementById('mathMetaI').textContent = `Unidade de Tolerância (i): ${i.toFixed(3)} µm`;
+
+            if (appState.mode === 'fit') {
+                const hPos = document.getElementById('holePos').value;
+                const hITGrade = parseInt(document.getElementById('holeIT').value, 10);
+                const sPos = document.getElementById('shaftPos').value;
+                const sITGrade = parseInt(document.getElementById('shaftIT').value, 10);
+
+                document.getElementById('holeDesignationBadge').textContent = `${hPos}${hITGrade}`;
+                document.getElementById('shaftDesignationBadge').textContent = `${sPos}${sITGrade}`;
+
+                const holeITVal = computeITValue(D, hITGrade);
+                const shaftITVal = computeITValue(D, sITGrade);
+
+                const holeDev = computeHoleDeviations(D, hPos, hITGrade, holeITVal);
+                const shaftDev = computeShaftDeviations(D, sPos, sITGrade, shaftITVal);
+
+                const holeData = {
+                    label: `Furo ${hPos}${hITGrade}`,
+                    code: `${hPos}${hITGrade}`,
+                    supUm: holeDev.ES,
+                    infUm: holeDev.EI,
+                    itUm: holeITVal,
+                    maxMm: nom + holeDev.ES / 1000,
+                    minMm: nom + holeDev.EI / 1000
+                };
+
+                const shaftData = {
+                    label: `Eixo ${sPos}${sITGrade}`,
+                    code: `${sPos}${sITGrade}`,
+                    supUm: shaftDev.es,
+                    infUm: shaftDev.ei,
+                    itUm: shaftITVal,
+                    maxMm: nom + shaftDev.es / 1000,
+                    minMm: nom + shaftDev.ei / 1000
+                };
+
+                // Análise do Ajuste (Furo - Eixo)
+                // Folga Máxima = ES - ei (ou Dmax - dmin)
+                // Folga Mínima = EI - es (ou Dmin - dmax)
+                const maxClearanceUm = holeData.supUm - shaftData.infUm;
+                const minClearanceUm = holeData.infUm - shaftData.supUm;
+
+                let fitType = "";
+                let fitBadgeClass = "";
+                let fitDesc = "";
+
+                if (minClearanceUm >= 0) {
+                    fitType = "Ajuste com Folga";
+                    fitBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                    fitDesc = "O furo é sempre maior (ou igual no limite) que o eixo. Permite movimento relativo, rotação ou deslizamento livre.";
+                } else if (maxClearanceUm <= 0) {
+                    fitType = "Ajuste com Interferência";
+                    fitBadgeClass = "bg-rose-100 text-rose-800 border-rose-200";
+                    fitDesc = "O eixo é sempre maior (ou igual no limite) que o furo. Montagem sob pressão (prensa) ou dilatação térmica.";
+                } else {
+                    fitType = "Ajuste Incerto (Transição)";
+                    fitBadgeClass = "bg-amber-100 text-amber-800 border-amber-200";
+                    fitDesc = "Os campos de tolerância se sobrepõem. Dependendo das peças reais, pode ocorrer pequena folga ou leve aperto.";
+                }
+
+                document.getElementById('isoNotationDisplay').textContent = `Ø ${nom} ${hPos}${hITGrade}/${sPos}${sITGrade}`;
+                const badgeEl = document.getElementById('fitTypeBadge');
+                badgeEl.textContent = fitType;
+                badgeEl.className = `px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${fitBadgeClass}`;
+                document.getElementById('fitDescriptionText').textContent = fitDesc;
+
+                renderFitCards(holeData, shaftData, maxClearanceUm, minClearanceUm, fitType);
+                renderSVG(holeData, shaftData);
+
+            } else {
+                // MODO INDIVIDUAL
+                const type = appState.singleType;
+                const pos = document.getElementById('singlePos').value;
+                const itGrade = parseInt(document.getElementById('singleIT').value, 10);
+                const itVal = computeITValue(D, itGrade);
+
+                let dev, elementData;
+                if (type === 'hole') {
+                    dev = computeHoleDeviations(D, pos, itGrade, itVal);
+                    elementData = {
+                        type: 'hole',
+                        label: `Furo ${pos}${itGrade}`,
+                        code: `${pos}${itGrade}`,
+                        supSymbol: 'ES',
+                        infSymbol: 'EI',
+                        supUm: dev.ES,
+                        infUm: dev.EI,
+                        itUm: itVal,
+                        maxMm: nom + dev.ES / 1000,
+                        minMm: nom + dev.EI / 1000
+                    };
+                } else {
+                    dev = computeShaftDeviations(D, pos, itGrade, itVal);
+                    elementData = {
+                        type: 'shaft',
+                        label: `Eixo ${pos}${itGrade}`,
+                        code: `${pos}${itGrade}`,
+                        supSymbol: 'es',
+                        infSymbol: 'ei',
+                        supUm: dev.es,
+                        infUm: dev.ei,
+                        itUm: itVal,
+                        maxMm: nom + dev.es / 1000,
+                        minMm: nom + dev.ei / 1000
+                    };
+                }
+
+                document.getElementById('isoNotationDisplay').textContent = `Ø ${nom} ${pos}${itGrade}`;
+                const badgeEl = document.getElementById('fitTypeBadge');
+                badgeEl.textContent = type === 'hole' ? "Elemento Interno (Furo)" : "Elemento Externo (Eixo)";
+                badgeEl.className = type === 'hole'
+                    ? "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-blue-100 text-blue-800 border-blue-200"
+                    : "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border bg-amber-100 text-amber-800 border-amber-200";
+                document.getElementById('fitDescriptionText').textContent =
+                    `Cota nominal de ${nom} mm com qualidade padrão IT${itGrade} (tolerância total de ${itVal} µm / ${(itVal / 1000).toFixed(4)} mm).`;
+
+                renderSingleCards(elementData);
+                renderSVG(type === 'hole' ? elementData : null, type === 'shaft' ? elementData : null);
+            }
+        }
+
+        /**
+         * Renderiza os 3 cartões de resultados para o Modo Ajuste
+         */
+        function renderFitCards(hole, shaft, maxClearanceUm, minClearanceUm, fitType) {
+            const grid = document.getElementById('resultsGrid');
+
+            // Formatação das folgas / interferências
+            let stat1Label, stat1Um, stat1Mm, stat1Color;
+            let stat2Label, stat2Um, stat2Mm, stat2Color;
+
+            if (fitType === "Ajuste com Folga") {
+                stat1Label = "Folga Máxima (F_máx)";
+                stat1Um = `+${maxClearanceUm.toFixed(1)} µm`;
+                stat1Mm = `+${(maxClearanceUm / 1000).toFixed(4)} mm`;
+                stat1Color = "text-emerald-700";
+
+                stat2Label = "Folga Mínima (F_mín)";
+                stat2Um = `+${minClearanceUm.toFixed(1)} µm`;
+                stat2Mm = `+${(minClearanceUm / 1000).toFixed(4)} mm`;
+                stat2Color = "text-emerald-700";
+            } else if (fitType === "Ajuste com Interferência") {
+                const maxInterf = Math.abs(minClearanceUm);
+                const minInterf = Math.abs(maxClearanceUm);
+
+                stat1Label = "Interferência Máxima (I_máx)";
+                stat1Um = `${maxInterf.toFixed(1)} µm`;
+                stat1Mm = `${(maxInterf / 1000).toFixed(4)} mm`;
+                stat1Color = "text-rose-700";
+
+                stat2Label = "Interferência Mínima (I_mín)";
+                stat2Um = `${minInterf.toFixed(1)} µm`;
+                stat2Mm = `${(minInterf / 1000).toFixed(4)} mm`;
+                stat2Color = "text-rose-700";
+            } else {
+                // Incerto
+                const maxInterf = Math.abs(minClearanceUm);
+                stat1Label = "Folga Máxima (F_máx)";
+                stat1Um = `+${maxClearanceUm.toFixed(1)} µm`;
+                stat1Mm = `+${(maxClearanceUm / 1000).toFixed(4)} mm`;
+                stat1Color = "text-emerald-700";
+
+                stat2Label = "Interferência Máxima (I_máx)";
+                stat2Um = `${maxInterf.toFixed(1)} µm`;
+                stat2Mm = `${(maxInterf / 1000).toFixed(4)} mm`;
+                stat2Color = "text-rose-700";
+            }
+
+            grid.innerHTML = `
+                <!-- Cartão 1: Furo -->
+                <div class="bg-white rounded-2xl border border-blue-200/90 shadow-sm overflow-hidden">
+                    <div class="bg-blue-600/10 border-b border-blue-100 px-5 py-3 flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-blue-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                            Dados do Furo (${hole.code})
+                        </span>
+                        <span class="font-mono text-xs font-bold text-blue-700">IT = ${hole.itUm} µm</span>
+                    </div>
+                    <div class="p-5 space-y-3">
+                        <div class="flex justify-between items-baseline border-b border-slate-100 pb-2">
+                            <span class="text-xs text-slate-500 font-medium">Afastamento Superior (ES)</span>
+                            <div class="text-right font-mono">
+                                <span class="text-sm font-bold text-slate-900">${formatSigned(hole.supUm, 1)} µm</span>
+                                <span class="text-xs text-slate-400 block">${formatSigned(hole.supUm / 1000, 4)} mm</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-baseline border-b border-slate-100 pb-2">
+                            <span class="text-xs text-slate-500 font-medium">Afastamento Inferior (EI)</span>
+                            <div class="text-right font-mono">
+                                <span class="text-sm font-bold text-slate-900">${formatSigned(hole.infUm, 1)} µm</span>
+                                <span class="text-xs text-slate-400 block">${formatSigned(hole.infUm / 1000, 4)} mm</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 pt-1">
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">D_máx</span>
+                                <span class="font-mono text-sm font-bold text-blue-700">${hole.maxMm.toFixed(4)} mm</span>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">D_mín</span>
+                                <span class="font-mono text-sm font-bold text-slate-800">${hole.minMm.toFixed(4)} mm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cartão 2: Eixo -->
+                <div class="bg-white rounded-2xl border border-amber-200/90 shadow-sm overflow-hidden">
+                    <div class="bg-amber-500/10 border-b border-amber-100 px-5 py-3 flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+                            Dados do Eixo (${shaft.code})
+                        </span>
+                        <span class="font-mono text-xs font-bold text-amber-700">IT = ${shaft.itUm} µm</span>
+                    </div>
+                    <div class="p-5 space-y-3">
+                        <div class="flex justify-between items-baseline border-b border-slate-100 pb-2">
+                            <span class="text-xs text-slate-500 font-medium">Afastamento Superior (es)</span>
+                            <div class="text-right font-mono">
+                                <span class="text-sm font-bold text-slate-900">${formatSigned(shaft.supUm, 1)} µm</span>
+                                <span class="text-xs text-slate-400 block">${formatSigned(shaft.supUm / 1000, 4)} mm</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-baseline border-b border-slate-100 pb-2">
+                            <span class="text-xs text-slate-500 font-medium">Afastamento Inferior (ei)</span>
+                            <div class="text-right font-mono">
+                                <span class="text-sm font-bold text-slate-900">${formatSigned(shaft.infUm, 1)} µm</span>
+                                <span class="text-xs text-slate-400 block">${formatSigned(shaft.infUm / 1000, 4)} mm</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 pt-1">
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">d_máx</span>
+                                <span class="font-mono text-sm font-bold text-amber-700">${shaft.maxMm.toFixed(4)} mm</span>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">d_mín</span>
+                                <span class="font-mono text-sm font-bold text-slate-800">${shaft.minMm.toFixed(4)} mm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cartão 3: Resultado do Conjunto Montado -->
+                <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+                    <div class="bg-slate-900 text-white px-5 py-3 flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+                            Condições de Montagem
+                        </span>
+                        <span class="font-mono text-[11px] text-slate-400">T_ajuste = ${(hole.itUm + shaft.itUm).toFixed(1)} µm</span>
+                    </div>
+                    <div class="p-5 space-y-3">
+                        <div class="flex justify-between items-baseline border-b border-slate-100 pb-2">
+                            <span class="text-xs text-slate-600 font-semibold">${stat1Label}</span>
+                            <div class="text-right font-mono">
+                                <span class="text-sm font-bold ${stat1Color}">${stat1Um}</span>
+                                <span class="text-xs text-slate-400 block">${stat1Mm}</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-baseline border-b border-slate-100 pb-2">
+                            <span class="text-xs text-slate-600 font-semibold">${stat2Label}</span>
+                            <div class="text-right font-mono">
+                                <span class="text-sm font-bold ${stat2Color}">${stat2Um}</span>
+                                <span class="text-xs text-slate-400 block">${stat2Mm}</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/70 flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">Tolerância do Ajuste</span>
+                                <span class="text-xs text-slate-600">Soma (IT_furo + IT_eixo)</span>
+                            </div>
+                            <span class="font-mono text-sm font-bold text-slate-900">${((hole.itUm + shaft.itUm) / 1000).toFixed(4)} mm</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Renderiza os cartões de resultados para o Modo Individual
+         */
+        function renderSingleCards(el) {
+            const grid = document.getElementById('resultsGrid');
+            const isHole = el.type === 'hole';
+            const themeBorder = isHole ? 'border-blue-200/90' : 'border-amber-200/90';
+            const themeAccent = isHole ? 'text-blue-700' : 'text-amber-700';
+
+            grid.innerHTML = `
+                <div class="bg-white rounded-2xl border ${themeBorder} shadow-sm p-5 flex flex-col justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Afastamentos Fundamentais</span>
+                    <div class="mt-3 space-y-2.5">
+                        <div class="flex justify-between items-baseline border-b border-slate-100 pb-2">
+                            <span class="text-sm text-slate-600 font-medium">Afastamento Superior (${el.supSymbol})</span>
+                            <span class="font-mono text-base font-bold text-slate-900">${formatSigned(el.supUm, 1)} µm <span class="text-xs font-normal text-slate-400">(${formatSigned(el.supUm / 1000, 4)} mm)</span></span>
+                        </div>
+                        <div class="flex justify-between items-baseline">
+                            <span class="text-sm text-slate-600 font-medium">Afastamento Inferior (${el.infSymbol})</span>
+                            <span class="font-mono text-base font-bold text-slate-900">${formatSigned(el.infUm, 1)} µm <span class="text-xs font-normal text-slate-400">(${formatSigned(el.infUm / 1000, 4)} mm)</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border ${themeBorder} shadow-sm p-5 flex flex-col justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Dimensões Limites</span>
+                    <div class="mt-3 space-y-2.5">
+                        <div class="flex justify-between items-baseline border-b border-slate-100 pb-2">
+                            <span class="text-sm text-slate-600 font-medium">Dimensão Máxima (${isHole ? 'D_máx' : 'd_máx'})</span>
+                            <span class="font-mono text-base font-bold ${themeAccent}">${el.maxMm.toFixed(4)} mm</span>
+                        </div>
+                        <div class="flex justify-between items-baseline">
+                            <span class="text-sm text-slate-600 font-medium">Dimensão Mínima (${isHole ? 'D_mín' : 'd_mín'})</span>
+                            <span class="font-mono text-base font-bold text-slate-900">${el.minMm.toFixed(4)} mm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 flex flex-col justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Campo de Tolerância Total</span>
+                    <div class="mt-3">
+                        <div class="font-mono text-2xl font-bold text-slate-900">${el.itUm} µm</div>
+                        <div class="font-mono text-sm text-slate-500 mt-0.5">${(el.itUm / 1000).toFixed(4)} mm</div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-2">Diferença admissível entre a dimensão máxima e a mínima.</p>
+                </div>
+            `;
+        }
+
+        /**
+         * Desenha o Diagrama Técnico Proporcional em SVG (Linha Zero + Campos de Tolerância)
+         */
+        function renderSVG(holeData, shaftData) {
+            const svg = document.getElementById('toleranceSvg');
+            const width = 640;
+            const height = 280;
+            const padTop = 36;
+            const padBottom = 36;
+            const plotHeight = height - padTop - padBottom;
+
+            // Coleta todos os valores em µm para determinar a escala vertical
+            let values = [0];
+            if (holeData) values.push(holeData.supUm, holeData.infUm);
+            if (shaftData) values.push(shaftData.supUm, shaftData.infUm);
+
+            let maxVal = Math.max(...values);
+            let minVal = Math.min(...values);
+            let span = maxVal - minVal;
+            if (span === 0) span = 20;
+
+            // Adiciona 22% de margem superior e inferior para os rótulos não cortarem
+            const margin = span * 0.25;
+            maxVal += margin;
+            minVal -= margin;
+            const totalRange = maxVal - minVal;
+
+            // Converte valor (µm) em coordenada Y no SVG
+            const valToY = (val) => {
+                const ratio = (maxVal - val) / totalRange;
+                return padTop + ratio * plotHeight;
+            };
+
+            const zeroY = valToY(0);
+
+            let svgContent = `
+                <!-- Definições de Hachura Técnica -->
+                <defs>
+                    <pattern id="hatchHole" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                        <line x1="0" y1="0" x2="0" y2="8" stroke="#2563eb" stroke-width="1.5" stroke-opacity="0.25" />
+                    </pattern>
+                    <pattern id="hatchShaft" width="8" height="8" patternTransform="rotate(-45 0 0)" patternUnits="userSpaceOnUse">
+                        <line x1="0" y1="0" x2="0" y2="8" stroke="#d97706" stroke-width="1.5" stroke-opacity="0.28" />
+                    </pattern>
+                </defs>
+
+                <!-- Eixo Vertical de Referência (µm) -->
+                <line x1="68" y1="${padTop - 10}" x2="68" y2="${height - padBottom + 10}" stroke="#94a3b8" stroke-width="1.2" />
+                <text x="58" y="${padTop - 14}" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">+µm</text>
+                <text x="58" y="${height - padBottom + 20}" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#64748b">-µm</text>
+
+                <!-- Linha Zero (Dimensão Nominal) -->
+                <line x1="62" y1="${zeroY}" x2="${width - 24}" y2="${zeroY}" stroke="#0f172a" stroke-width="1.6" stroke-dasharray="6,4" />
+                <rect x="10" y="${zeroY - 10}" width="50" height="20" rx="4" fill="#0f172a" />
+                <text x="35" y="${zeroY + 4}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#ffffff">0 µm</text>
+                <text x="${width - 28}" y="${zeroY - 6}" text-anchor="end" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#334155">Linha Zero (Ø ${appState.nominal} mm)</text>
+            `;
+
+            // Desenho da Barra do Furo
+            if (holeData) {
+                const barX = shaftData ? 175 : 265;
+                const barW = 110;
+                const yTop = valToY(holeData.supUm);
+                const yBot = valToY(holeData.infUm);
+                const rectH = Math.max(yBot - yTop, 3); // Mínimo 3px para visibilidade
+
+                svgContent += `
+                    <!-- Guia pontilhada até eixo Y -->
+                    <line x1="68" y1="${yTop}" x2="${barX}" y2="${yTop}" stroke="#3b82f6" stroke-width="1" stroke-dasharray="2,2" opacity="0.6"/>
+                    <line x1="68" y1="${yBot}" x2="${barX}" y2="${yBot}" stroke="#3b82f6" stroke-width="1" stroke-dasharray="2,2" opacity="0.6"/>
+
+                    <!-- Retângulo do Campo de Tolerância do Furo -->
+                    <rect x="${barX}" y="${yTop}" width="${barW}" height="${rectH}" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2" />
+                    <rect x="${barX}" y="${yTop}" width="${barW}" height="${rectH}" rx="4" fill="url(#hatchHole)" />
+
+                    <!-- Rótulo Central da Classe -->
+                    <text x="${barX + barW / 2}" y="${yTop + rectH / 2 + 4}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="bold" fill="#1e3a8a">${holeData.code}</text>
+
+                    <!-- Rótulo ES -->
+                    <text x="${barX + barW + 10}" y="${yTop + 4}" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#1d4ed8">ES: ${formatSigned(holeData.supUm, 1)} µm</text>
+                    <!-- Rótulo EI -->
+                    <text x="${barX + barW + 10}" y="${yBot + 4}" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#1d4ed8">EI: ${formatSigned(holeData.infUm, 1)} µm</text>
+                `;
+            }
+
+            // Desenho da Barra do Eixo
+            if (shaftData) {
+                const barX = holeData ? 395 : 265;
+                const barW = 110;
+                const yTop = valToY(shaftData.supUm);
+                const yBot = valToY(shaftData.infUm);
+                const rectH = Math.max(yBot - yTop, 3);
+
+                svgContent += `
+                    <!-- Guia pontilhada -->
+                    <line x1="68" y1="${yTop}" x2="${barX}" y2="${yTop}" stroke="#d97706" stroke-width="1" stroke-dasharray="2,2" opacity="0.5"/>
+                    <line x1="68" y1="${yBot}" x2="${barX}" y2="${yBot}" stroke="#d97706" stroke-width="1" stroke-dasharray="2,2" opacity="0.5"/>
+
+                    <!-- Retângulo do Campo de Tolerância do Eixo -->
+                    <rect x="${barX}" y="${yTop}" width="${barW}" height="${rectH}" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="2" />
+                    <rect x="${barX}" y="${yTop}" width="${barW}" height="${rectH}" rx="4" fill="url(#hatchShaft)" />
+
+                    <!-- Rótulo Central da Classe -->
+                    <text x="${barX + barW / 2}" y="${yTop + rectH / 2 + 4}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="13" font-weight="bold" fill="#78350f">${shaftData.code}</text>
+
+                    <!-- Rótulo es -->
+                    <text x="${barX + barW + 10}" y="${yTop + 4}" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#b45309">es: ${formatSigned(shaftData.supUm, 1)} µm</text>
+                    <!-- Rótulo ei -->
+                    <text x="${barX + barW + 10}" y="${yBot + 4}" font-family="JetBrains Mono, monospace" font-size="11" font-weight="bold" fill="#b45309">ei: ${formatSigned(shaftData.infUm, 1)} µm</text>
+                `;
+            }
+
+            svg.innerHTML = svgContent;
+        }
+
+        /**
+         * Copia o resumo da especificação técnica para a área de transferência
+         */
+        function copySummary() {
+            const notation = document.getElementById('isoNotationDisplay').textContent;
+            const badge = document.getElementById('fitTypeBadge').textContent.trim();
+            const textToCopy = `${notation} (${badge}) - ABNT NBR 6158`;
+
+            const tempInput = document.createElement('textarea');
+            tempInput.value = textToCopy;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            const btnText = document.getElementById('copyBtnText');
+            const originalText = btnText.textContent;
+            btnText.textContent = "Copiado!";
+            setTimeout(() => {
+                btnText.textContent = originalText;
+            }, 1800);
+        }
+
+        // Inicialização ao carregar a página
+        window.addEventListener('DOMContentLoaded', () => {
+            initSelects();
+            calculateAll();
+        });
+    </script>
+</body>
+</html>
